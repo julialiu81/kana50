@@ -172,6 +172,18 @@
   .feedback{min-height:30px; text-align:center; margin-top:12px; font-size:17px; font-weight:700}
   .feedback.ok{color:var(--good)}
   .feedback.no{color:var(--weak)}
+  .mini-card{
+    display:block; width:100%; margin-top:4px; text-align:left;
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    box-shadow:var(--shadow); padding:12px 14px; color:var(--ink); font-size:14px;
+  }
+  .mini-card .mc-head{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+  .mini-card .mc-kana{font-size:42px; line-height:1; color:var(--accent)}
+  .mini-card .mc-r{color:var(--sub); font-size:15px; letter-spacing:.08em}
+  .mini-card .mc-word{font-size:20px; margin-left:auto; text-align:right}
+  .mini-card .mc-mean{color:var(--sub); font-size:13px; margin-left:4px}
+  .mini-card .mc-tips b{color:var(--accent)}
+  .mini-card .mc-open{color:var(--indigo); font-size:13px; margin-top:7px}
   .next-btn{
     display:block; width:100%; margin-top:10px; border:none; border-radius:12px;
     padding:14px 0; font-size:17px; background:var(--accent); color:#fff;
@@ -266,6 +278,7 @@
       <div class="q-card" id="qCard"></div>
       <div class="ans-grid" id="ansGrid"></div>
       <div class="feedback" id="qFeedback"></div>
+      <button class="mini-card hidden" id="qReview"></button>
       <button class="next-btn hidden" id="qNext">下一題</button>
     </div>
     <div id="quizResult" class="hidden">
@@ -594,11 +607,18 @@ function pickTargets(mode, n){
   return picked;
 }
 function distractors(k, n){
-  const set = new Set();
-  CONFUSE.forEach(g=>{ if(g.includes(k)) g.forEach(x=>{ if(x!==k) set.add(x) }) });
-  const cands = shuffle([...set]);
-  const rest = shuffle(DATA.map(d=>d.k).filter(x=>x!==k && !set.has(x)));
-  return cands.concat(rest).slice(0,n);
+  const range = rangeKanas().filter(x=>x!==k);
+  const conf = new Set();
+  CONFUSE.forEach(g=>{ if(g.includes(k)) g.forEach(x=>{ if(x!==k) conf.add(x) }) });
+  const inRangeConf = shuffle(range.filter(x=>conf.has(x)));
+  const inRangeRest = shuffle(range.filter(x=>!conf.has(x)));
+  const outConf = shuffle([...conf].filter(x=>!range.includes(x)));
+  const outRest = shuffle(DATA.map(d=>d.k).filter(x=>x!==k && !range.includes(x) && !conf.has(x)));
+  const out = [], seen = new Set();
+  [...inRangeConf, ...inRangeRest, ...outConf, ...outRest].forEach(x=>{
+    if(!seen.has(x) && out.length<n){ seen.add(x); out.push(x); }
+  });
+  return out;
 }
 document.querySelectorAll(".mode-btn").forEach(b=>{
   b.addEventListener("click", ()=>startQuiz(b.dataset.mode));
@@ -619,6 +639,7 @@ function showQuestion(){
   quiz.qtype = qtype;
   el("quizProgress").textContent = (quiz.i+1) + " / " + QUIZ_LEN;
   el("qFeedback").textContent = ""; el("qFeedback").className = "feedback";
+  el("qReview").classList.add("hidden");
   el("qNext").classList.add("hidden");
   const qc = el("qCard"), ag = el("ansGrid");
   ag.innerHTML = "";
@@ -661,14 +682,23 @@ function answer(btn, ok, k, grid){
   if(ok){ quiz.score++; fb.textContent = "答對了！"; fb.classList.add("ok"); }
   else{
     quiz.wrong.push(k);
-    fb.textContent = `是「${d.k}」（${d.r}）— ${wordText(d)}`;
+    fb.textContent = `答錯了，正確是「${d.k}」（${d.r}）`;
     fb.classList.add("no");
   }
+  const rev = el("qReview");
+  rev.innerHTML =
+    `<div class="mc-head"><span class="mc-kana kana-font">${d.k}</span><span class="mc-r">${d.r}</span>` +
+    `<span class="mc-word kana-font">${wordHTML(d,"hl")} ${d.e}<span class="mc-mean">${d.m}</span></span></div>` +
+    `<div class="mc-tips"><b>諧音</b>　${d.tipS}<br><b>圖像</b>　${d.tipI}</div>` +
+    `<div class="mc-open">點一下打開完整字卡 →</div>`;
+  rev.classList.remove("hidden");
   speak(d.k + "、" + d.w);
   el("qNext").textContent = quiz.i+1 >= QUIZ_LEN ? "看成績" : "下一題";
   el("qNext").classList.remove("hidden");
 }
-function wordText(d){ return d.w + "（" + d.m + "）" }
+el("qReview").addEventListener("click", ()=>{
+  if(quiz && quiz.answered) openCard(IDX[quiz.targets[quiz.i]]);
+});
 el("qNext").addEventListener("click", ()=>{
   quiz.i++;
   if(quiz.i >= QUIZ_LEN) showResult(); else showQuestion();
