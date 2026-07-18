@@ -1,0 +1,676 @@
+<title>50音字卡</title>
+<style>
+  :root{
+    --bg:#F6F3EC; --card:#FFFFFF; --ink:#35333D; --sub:#8B8794;
+    --accent:#D5495B; --accent-soft:#FBEAEC;
+    --indigo:#44568F; --indigo-soft:#EAEEF8;
+    --good:#3F9668; --mid:#D9A036; --weak:#D5495B; --new:#C9C5BC;
+    --line:#E7E2D7; --shadow:0 2px 10px rgba(60,50,40,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#1A1B21; --card:#25262E; --ink:#ECEAF2; --sub:#9B98A8;
+      --accent:#F07E8E; --accent-soft:#3A2A2E;
+      --indigo:#93A6DB; --indigo-soft:#2A2E3D;
+      --good:#5FBF8A; --mid:#E0B25C; --weak:#F07E8E; --new:#4A4B55;
+      --line:#35363F; --shadow:0 2px 10px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#F6F3EC; --card:#FFFFFF; --ink:#35333D; --sub:#8B8794;
+    --accent:#D5495B; --accent-soft:#FBEAEC;
+    --indigo:#44568F; --indigo-soft:#EAEEF8;
+    --good:#3F9668; --mid:#D9A036; --weak:#D5495B; --new:#C9C5BC;
+    --line:#E7E2D7; --shadow:0 2px 10px rgba(60,50,40,.08);
+  }
+  :root[data-theme="dark"]{
+    --bg:#1A1B21; --card:#25262E; --ink:#ECEAF2; --sub:#9B98A8;
+    --accent:#F07E8E; --accent-soft:#3A2A2E;
+    --indigo:#93A6DB; --indigo-soft:#2A2E3D;
+    --good:#5FBF8A; --mid:#E0B25C; --weak:#F07E8E; --new:#4A4B55;
+    --line:#35363F; --shadow:0 2px 10px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Noto Sans TC","Microsoft JhengHei","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+    font-size:16px; line-height:1.5;
+  }
+  .kana-font{font-family:"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho","Noto Serif TC",serif}
+  #app{max-width:480px; margin:0 auto; padding:14px 14px 84px}
+  header.top{display:flex; align-items:baseline; gap:10px; padding:6px 2px 14px}
+  header.top h1{font-size:20px; margin:0; letter-spacing:.05em}
+  header.top .sub{color:var(--sub); font-size:13px}
+  .hidden{display:none !important}
+  button{font-family:inherit; cursor:pointer}
+  button:focus-visible{outline:3px solid var(--indigo); outline-offset:2px}
+
+  /* ---- 50音 grid ---- */
+  .kana-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:8px}
+  .kana-cell{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:10px 0 8px; text-align:center; box-shadow:var(--shadow); border-bottom-width:3px;
+  }
+  .kana-cell .k{font-size:26px; line-height:1.15}
+  .kana-cell .r{font-size:11px; color:var(--sub); letter-spacing:.06em}
+  .kana-cell.m-good{border-bottom-color:var(--good)}
+  .kana-cell.m-mid{border-bottom-color:var(--mid)}
+  .kana-cell.m-weak{border-bottom-color:var(--weak)}
+  .kana-cell.m-new{border-bottom-color:var(--new)}
+  .kana-cell:active{transform:scale(.95)}
+  .grid-gap{visibility:hidden}
+
+  /* ---- card overlay ---- */
+  #cardOverlay{
+    position:fixed; inset:0; background:var(--bg); z-index:50;
+    overflow-y:auto; padding:12px 16px 20px;
+  }
+  #cardOverlay .inner{max-width:480px; margin:0 auto}
+  .card-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+  .card-top .pos{color:var(--sub); font-size:14px; font-variant-numeric:tabular-nums}
+  .icon-btn{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:8px 14px; font-size:15px; color:var(--ink); box-shadow:var(--shadow);
+  }
+  .flashcard{
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    box-shadow:var(--shadow); padding:22px 18px; text-align:center;
+  }
+  .flashcard .big-kana{font-size:96px; line-height:1.1; color:var(--accent)}
+  .flashcard .romaji{font-size:20px; color:var(--sub); letter-spacing:.15em; margin-top:2px}
+  .src-chip{
+    display:inline-block; margin-top:10px; padding:3px 12px; border-radius:999px;
+    background:var(--indigo-soft); color:var(--indigo); font-size:14px;
+  }
+  .word-block{margin-top:16px; padding-top:16px; border-top:1px dashed var(--line)}
+  .word-block .emoji{font-size:56px; line-height:1.2}
+  .word-block .word{font-size:32px; margin-top:6px}
+  .word-block .word .hl{color:var(--accent); font-weight:700}
+  .word-block .mean{color:var(--sub); font-size:15px; margin-top:2px}
+  .tip-box{
+    margin-top:14px; background:var(--accent-soft); border-radius:12px;
+    padding:10px 14px; font-size:15px; text-align:left; color:var(--ink);
+  }
+  .tip-box b{color:var(--accent)}
+  .speak-row{display:flex; gap:10px; margin-top:16px}
+  .speak-btn{
+    flex:1; border:none; border-radius:12px; padding:13px 0; font-size:16px;
+    background:var(--accent); color:#fff;
+  }
+  .speak-btn.alt{background:var(--indigo)}
+  .speak-btn:active{opacity:.85}
+  .nav-row{display:flex; gap:10px; margin-top:12px}
+  .nav-btn{
+    flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:12px 0; font-size:16px; color:var(--ink); box-shadow:var(--shadow);
+  }
+
+  /* ---- quiz ---- */
+  .mode-list{display:flex; flex-direction:column; gap:10px}
+  .mode-btn{
+    display:flex; align-items:center; gap:12px; text-align:left;
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px 16px; box-shadow:var(--shadow); color:var(--ink);
+  }
+  .mode-btn .ic{font-size:26px}
+  .mode-btn .t{font-size:17px; font-weight:700}
+  .mode-btn .d{font-size:13px; color:var(--sub)}
+  .mode-btn:active{transform:scale(.98)}
+  .quiz-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px}
+  .quiz-head .n{color:var(--sub); font-variant-numeric:tabular-nums}
+  .q-card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    box-shadow:var(--shadow); padding:22px 16px; text-align:center; margin-bottom:12px;
+  }
+  .q-card .q-kana{font-size:76px; line-height:1.1}
+  .q-card .q-emoji{font-size:60px}
+  .q-card .q-word{font-size:30px; margin-top:4px}
+  .q-card .q-word .blank{color:var(--accent); font-weight:700}
+  .q-card .q-mean{color:var(--sub); font-size:15px}
+  .q-card .q-label{color:var(--sub); font-size:14px; margin-bottom:6px}
+  .play-big{
+    border:none; background:var(--indigo); color:#fff; border-radius:999px;
+    font-size:22px; padding:14px 34px;
+  }
+  .ans-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .ans-btn{
+    background:var(--card); border:2px solid var(--line); border-radius:14px;
+    padding:16px 0; font-size:26px; color:var(--ink); box-shadow:var(--shadow);
+  }
+  .ans-btn.romaji-ans{font-size:22px; letter-spacing:.08em}
+  .ans-btn.correct{border-color:var(--good); background:var(--good); color:#fff}
+  .ans-btn.wrong{border-color:var(--weak); background:var(--weak); color:#fff}
+  .ans-btn.dim{opacity:.45}
+  .feedback{min-height:30px; text-align:center; margin-top:12px; font-size:17px; font-weight:700}
+  .feedback.ok{color:var(--good)}
+  .feedback.no{color:var(--weak)}
+  .next-btn{
+    display:block; width:100%; margin-top:10px; border:none; border-radius:12px;
+    padding:14px 0; font-size:17px; background:var(--accent); color:#fff;
+  }
+  .result-card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    box-shadow:var(--shadow); padding:24px 18px; text-align:center;
+  }
+  .result-card .score{font-size:44px; font-weight:700; font-variant-numeric:tabular-nums}
+  .result-card .wrong-list{margin-top:10px; font-size:26px; letter-spacing:.2em; color:var(--weak)}
+
+  /* ---- game ---- */
+  .game-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px}
+  .g-card{
+    position:relative; aspect-ratio:3/3.4; border-radius:12px; border:none;
+    background:var(--indigo); color:#fff; font-size:24px;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s;
+  }
+  .g-card::after{content:"？"; font-size:22px; opacity:.7}
+  .g-card.open,.g-card.matched{background:var(--card); color:var(--ink); border:2px solid var(--indigo)}
+  .g-card.open::after,.g-card.matched::after{content:none}
+  .g-card.matched{border-color:var(--good); color:var(--good)}
+  .g-card:active{transform:scale(.94)}
+  .game-info{display:flex; justify-content:space-between; align-items:center; color:var(--sub); font-size:15px}
+  .game-done{text-align:center; font-size:18px; font-weight:700; color:var(--good); margin-top:14px}
+
+  /* ---- progress ---- */
+  .legend{display:flex; gap:14px; flex-wrap:wrap; margin:6px 0 12px; font-size:13px; color:var(--sub)}
+  .legend .dot{display:inline-block; width:10px; height:10px; border-radius:99px; margin-right:4px}
+  .stat-row{display:flex; gap:10px; margin-bottom:14px}
+  .stat-box{
+    flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px;
+    text-align:center; padding:10px 0; box-shadow:var(--shadow);
+  }
+  .stat-box .v{font-size:24px; font-weight:700; font-variant-numeric:tabular-nums}
+  .stat-box .l{font-size:12px; color:var(--sub)}
+  .danger-btn{
+    display:block; width:100%; margin-top:16px; background:none; color:var(--weak);
+    border:1px solid var(--weak); border-radius:12px; padding:11px 0; font-size:15px;
+  }
+
+  /* ---- bottom nav ---- */
+  nav.tabbar{
+    position:fixed; bottom:0; left:0; right:0; z-index:40;
+    background:var(--card); border-top:1px solid var(--line);
+    display:flex; justify-content:center;
+  }
+  nav.tabbar .wrap{display:flex; width:100%; max-width:480px}
+  .tab-btn{
+    flex:1; background:none; border:none; padding:9px 0 12px; color:var(--sub);
+    font-size:12px; display:flex; flex-direction:column; align-items:center; gap:1px;
+  }
+  .tab-btn .ic{font-size:21px}
+  .tab-btn.active{color:var(--accent); font-weight:700}
+  .section-note{color:var(--sub); font-size:13px; margin:2px 2px 12px}
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; animation:none !important}
+  }
+</style>
+
+<div id="app">
+  <header class="top">
+    <h1>50音字卡</h1>
+    <span class="sub" id="topSub">平假名・清音 46 字</span>
+  </header>
+
+  <!-- 字卡 -->
+  <section id="view-cards">
+    <p class="section-note">點任一個假名打開字卡。格子下緣的顏色是熟練度（綠＝熟、黃＝學習中、紅＝不熟）。</p>
+    <div class="kana-grid" id="cardsGrid"></div>
+  </section>
+
+  <!-- 測驗 -->
+  <section id="view-quiz" class="hidden">
+    <div id="quizMenu" class="mode-list">
+      <p class="section-note">每回合 10 題，答錯的音會自動記錄，之後用「弱點複習」加強。</p>
+      <button class="mode-btn" data-mode="read"><span class="ic">👀</span><span><span class="t">看字選音</span><br><span class="d">看假名，選出正確的讀音</span></span></button>
+      <button class="mode-btn" data-mode="listen"><span class="ic">👂</span><span><span class="t">聽音選字</span><br><span class="d">聽發音，選出正確的假名</span></span></button>
+      <button class="mode-btn" data-mode="word"><span class="ic">🖼️</span><span><span class="t">看圖選字</span><br><span class="d">看圖片和單字，填上缺少的假名</span></span></button>
+      <button class="mode-btn" data-mode="weak"><span class="ic">🔥</span><span><span class="t">弱點複習</span><br><span class="d">混合題型，專攻你答錯過、還不熟的音</span></span></button>
+    </div>
+    <div id="quizArea" class="hidden">
+      <div class="quiz-head">
+        <button class="icon-btn" id="quizQuit">✕ 結束</button>
+        <span class="n" id="quizProgress"></span>
+      </div>
+      <div class="q-card" id="qCard"></div>
+      <div class="ans-grid" id="ansGrid"></div>
+      <div class="feedback" id="qFeedback"></div>
+      <button class="next-btn hidden" id="qNext">下一題</button>
+    </div>
+    <div id="quizResult" class="hidden">
+      <div class="result-card">
+        <div>本回合成績</div>
+        <div class="score" id="resScore"></div>
+        <div id="resWrongWrap"><div style="color:var(--sub);font-size:14px">答錯的音</div><div class="wrong-list kana-font" id="resWrong"></div></div>
+      </div>
+      <button class="next-btn" id="resAgain">再玩一回合</button>
+      <button class="nav-btn" style="width:100%;margin-top:10px" id="resBack">回測驗選單</button>
+    </div>
+  </section>
+
+  <!-- 遊戲 -->
+  <section id="view-game" class="hidden">
+    <p class="section-note">配對翻牌：把假名和它的讀音配成一對。</p>
+    <div class="game-info"><span id="gameMoves">翻牌 0 次</span><button class="icon-btn" id="gameRestart">🔄 重新開始</button></div>
+    <div class="game-grid" id="gameGrid"></div>
+    <div class="game-done hidden" id="gameDone"></div>
+  </section>
+
+  <!-- 進度 -->
+  <section id="view-progress" class="hidden">
+    <div class="stat-row">
+      <div class="stat-box"><div class="v" id="stGood">0</div><div class="l">已熟練</div></div>
+      <div class="stat-box"><div class="v" id="stMid">0</div><div class="l">學習中</div></div>
+      <div class="stat-box"><div class="v" id="stWeak">0</div><div class="l">不熟</div></div>
+      <div class="stat-box"><div class="v" id="stNew">0</div><div class="l">未測驗</div></div>
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--good)"></span>熟練（連對 3 次）</span>
+      <span><span class="dot" style="background:var(--mid)"></span>學習中</span>
+      <span><span class="dot" style="background:var(--weak)"></span>不熟</span>
+      <span><span class="dot" style="background:var(--new)"></span>未測驗</span>
+    </div>
+    <div class="kana-grid" id="progGrid"></div>
+    <button class="danger-btn" id="resetBtn">清除所有學習紀錄</button>
+  </section>
+</div>
+
+<!-- 字卡全螢幕 -->
+<div id="cardOverlay" class="hidden">
+  <div class="inner">
+    <div class="card-top">
+      <button class="icon-btn" id="cardClose">✕ 關閉</button>
+      <span class="pos" id="cardPos"></span>
+    </div>
+    <div class="flashcard">
+      <div class="big-kana kana-font" id="cKana"></div>
+      <div class="romaji" id="cRomaji"></div>
+      <div><span class="src-chip" id="cSrc"></span></div>
+      <div class="word-block">
+        <div class="emoji" id="cEmoji"></div>
+        <div class="word kana-font" id="cWord"></div>
+        <div class="mean" id="cMean"></div>
+      </div>
+      <div class="tip-box" id="cTip"></div>
+      <div class="speak-row">
+        <button class="speak-btn" id="speakKana">🔊 唸假名</button>
+        <button class="speak-btn alt" id="speakWord">🔊 唸單字</button>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" id="cardPrev">← 上一個</button>
+      <button class="nav-btn" id="cardNext">下一個 →</button>
+    </div>
+  </div>
+</div>
+
+<nav class="tabbar"><div class="wrap">
+  <button class="tab-btn active" data-tab="cards"><span class="ic">🎴</span>字卡</button>
+  <button class="tab-btn" data-tab="quiz"><span class="ic">✍️</span>測驗</button>
+  <button class="tab-btn" data-tab="game"><span class="ic">🎮</span>遊戲</button>
+  <button class="tab-btn" data-tab="progress"><span class="ic">📊</span>進度</button>
+</div></nav>
+
+<script>
+"use strict";
+/* ================= 資料 ================= */
+const DATA = [
+ {k:"あ",r:"a",src:"安",w:"あめ",wi:0,m:"雨",e:"☔",tip:"「安」的草書。十字上盤了一圈，像雨傘的骨架。"},
+ {k:"い",r:"i",src:"以",w:"いぬ",wi:0,m:"狗",e:"🐶",tip:"「以」的左右兩點。兩筆並排，像狗豎起的兩隻耳朵。"},
+ {k:"う",r:"u",src:"宇",w:"うみ",wi:0,m:"海",e:"🌊",tip:"「宇」的上半部。頭上一點，像海面冒出的浪頭。"},
+ {k:"え",r:"e",src:"衣",w:"えき",wi:0,m:"車站",e:"🚉",tip:"「衣」的草書，尾巴打個勾，像鐵軌的彎道。"},
+ {k:"お",r:"o",src:"於",w:"おにぎり",wi:0,m:"飯糰",e:"🍙",tip:"「於」的草書。比「あ」多一點——飯糰上多了一粒芝麻。"},
+ {k:"か",r:"ka",src:"加",w:"かさ",wi:0,m:"雨傘",e:"🌂",tip:"讀音就是「加」（ka）！字形也是「加」的左半。"},
+ {k:"き",r:"ki",src:"幾",w:"きつね",wi:0,m:"狐狸",e:"🦊",tip:"像一把鑰匙 key → き。兩橫一斜再一筆。"},
+ {k:"く",r:"ku",src:"久",w:"くつ",wi:0,m:"鞋子",e:"👟",tip:"像張開的鳥嘴，鳥叫「く、く、く」。"},
+ {k:"け",r:"ke",src:"計",w:"けむり",wi:0,m:"煙",e:"💨",tip:"「計」的草書。左邊一豎像煙囪，右邊煙往上飄。"},
+ {k:"こ",r:"ko",src:"己",w:"こども",wi:0,m:"小孩",e:"🧒",tip:"「己」少一筆，剩兩橫，像瞇瞇笑的眼睛。"},
+ {k:"さ",r:"sa",src:"左",w:"さかな",wi:0,m:"魚",e:"🐟",tip:"「左」的草書。和「き」長得像，但少一橫。"},
+ {k:"し",r:"shi",src:"之",w:"しか",wi:0,m:"鹿",e:"🦌",tip:"一條垂下的釣魚線（shi 諧音「絲」），一筆到底。"},
+ {k:"す",r:"su",src:"寸",w:"すし",wi:0,m:"壽司",e:"🍣",tip:"像吸管捲了一圈，「嘶——」地吸。"},
+ {k:"せ",r:"se",src:"世",w:"せんせい",wi:0,m:"老師",e:"🧑‍🏫",tip:"就是「世」的草書，讀音也接近台語的「世」（sè）。"},
+ {k:"そ",r:"so",src:"曾",w:"そら",wi:0,m:"天空",e:"🌤️",tip:"像一道閃電從天空劈下來，「唆——」。"},
+ {k:"た",r:"ta",src:"太",w:"たまご",wi:0,m:"雞蛋",e:"🥚",tip:"左邊像 t、右邊像 a，合起來就是 ta。"},
+ {k:"ち",r:"chi",src:"知",w:"ちず",wi:0,m:"地圖",e:"🗺️",tip:"「知」的左半，讀音像中文的「七」（chi）。"},
+ {k:"つ",r:"tsu",src:"川",w:"つき",wi:0,m:"月亮",e:"🌙",tip:"像一道捲過來的海浪——海嘯 tsunami 就是つ開頭！"},
+ {k:"て",r:"te",src:"天",w:"てがみ",wi:0,m:"信",e:"✉️",tip:"「天」的草書，一筆到底。て＝手，寫信要用手。"},
+ {k:"と",r:"to",src:"止",w:"とり",wi:0,m:"鳥",e:"🐦",tip:"像腳趾（toe）踢到一根釘子。"},
+ {k:"な",r:"na",src:"奈",w:"なつ",wi:0,m:"夏天",e:"⛱️",tip:"「奈」的草書。左邊十字、右邊一個圈。"},
+ {k:"に",r:"ni",src:"仁",w:"にく",wi:0,m:"肉",e:"🍖",tip:"就是「仁」：單人旁加二。讀音像中文的「你」（ni）。"},
+ {k:"ぬ",r:"nu",src:"奴",w:"ぬいぐるみ",wi:0,m:"布偶",e:"🧸",tip:"像一碗麵條（noodle）尾巴打了個結。和「め」差在有沒有這個圈！"},
+ {k:"ね",r:"ne",src:"祢",w:"ねこ",wi:0,m:"貓",e:"🐱",tip:"像一隻蹲坐、尾巴捲圈的貓——貓就是ねこ。"},
+ {k:"の",r:"no",src:"乃",w:"のり",wi:0,m:"海苔",e:"🍘",tip:"像禁止符號 🚫 → NO！一筆畫一個圈。"},
+ {k:"は",r:"ha",src:"波",w:"はな",wi:0,m:"花",e:"🌸",tip:"「波」的草書，右下有個小圈，像花莖上的花苞。"},
+ {k:"ひ",r:"hi",src:"比",w:"ひこうき",wi:0,m:"飛機",e:"✈️",tip:"像一張咧嘴笑的臉：「嘻（hi）——」。"},
+ {k:"ふ",r:"fu",src:"不",w:"ふね",wi:0,m:"船",e:"⛵",tip:"像富士山（ふじさん）上飄著雪花——ふ就是富士的ふ。"},
+ {k:"へ",r:"he",src:"部",w:"へび",wi:0,m:"蛇",e:"🐍",tip:"像一座小山坡，慢慢「爬」上去。最簡單的一個字！"},
+ {k:"ほ",r:"ho",src:"保",w:"ほし",wi:0,m:"星星",e:"⭐",tip:"「保」的右半。比「は」多一橫，像多掛了一顆星。"},
+ {k:"ま",r:"ma",src:"末",w:"まど",wi:0,m:"窗戶",e:"🪟",tip:"「末」的草書，尾巴捲個圈。媽（ma）媽在窗邊。"},
+ {k:"み",r:"mi",src:"美",w:"みず",wi:0,m:"水",e:"💧",tip:"「美」的草書。像數字 21 連在一起，諧音「咪」。"},
+ {k:"む",r:"mu",src:"武",w:"むし",wi:0,m:"蟲",e:"🐛",tip:"像一頭牛「哞——」（mu），肚子上有個圈。"},
+ {k:"め",r:"me",src:"女",w:"めがね",wi:0,m:"眼鏡",e:"👓",tip:"「女」的草書。め＝目（眼睛），戴眼鏡的め。沒有尾圈，別和「ぬ」搞混！"},
+ {k:"も",r:"mo",src:"毛",w:"もも",wi:0,m:"桃子",e:"🍑",tip:"就是「毛」！讀音也像「毛」（mo）。"},
+ {k:"や",r:"ya",src:"也",w:"やま",wi:0,m:"山",e:"⛰️",tip:"「也」的草書，讀音也是「也」（ya）。"},
+ {k:"ゆ",r:"yu",src:"由",w:"ゆき",wi:0,m:"雪",e:"❄️",tip:"「由」的草書，像一條魚（yu 諧音「魚」）游過去。"},
+ {k:"よ",r:"yo",src:"与",w:"よる",wi:0,m:"夜晚",e:"🌃",tip:"像一顆垂下來的溜溜球（yo-yo）。"},
+ {k:"ら",r:"ra",src:"良",w:"らくだ",wi:0,m:"駱駝",e:"🐫",tip:"「良」的草書，頭上一點，像駱駝的駝峰。"},
+ {k:"り",r:"ri",src:"利",w:"りんご",wi:0,m:"蘋果",e:"🍎",tip:"「利」的右半「刂」，兩筆垂下，右邊比較長。"},
+ {k:"る",r:"ru",src:"留",w:"さる",wi:1,m:"猴子",e:"🐵",tip:"像數字 3 尾巴多繞一圈——那個圈把音「留」住了。"},
+ {k:"れ",r:"re",src:"礼",w:"れいぞうこ",wi:0,m:"冰箱",e:"🧊",tip:"就是「礼」：左邊一豎，右邊尾巴往上翹。"},
+ {k:"ろ",r:"ro",src:"呂",w:"ろうそく",wi:0,m:"蠟燭",e:"🕯️",tip:"「る」的兄弟——少了尾圈，就是一個光溜溜的 3。"},
+ {k:"わ",r:"wa",src:"和",w:"わに",wi:0,m:"鱷魚",e:"🐊",tip:"讀音就是「和」（wa）。ね・れ・わ 三兄弟：貓有尾圈、礼往上翹、わ圓圓收。"},
+ {k:"を",r:"wo",src:"遠",w:"ほんをよむ",wi:2,m:"讀書",e:"📖",tip:"只當助詞用的字（讀 o）。「本を読む」＝讀書。像「ち」多了一撇。"},
+ {k:"ん",r:"n",src:"无",w:"ぱん",wi:1,m:"麵包",e:"🍞",tip:"像英文小寫 n 的草寫，讀音剛好就是 n。唯一不當開頭的音。"}
+];
+const IDX = {}; DATA.forEach((d,i)=>IDX[d.k]=i);
+const ROWS = [
+ ["あ","い","う","え","お"],["か","き","く","け","こ"],["さ","し","す","せ","そ"],
+ ["た","ち","つ","て","と"],["な","に","ぬ","ね","の"],["は","ひ","ふ","へ","ほ"],
+ ["ま","み","む","め","も"],["や",null,"ゆ",null,"よ"],["ら","り","る","れ","ろ"],
+ ["わ",null,null,null,"を"],["ん",null,null,null,null]
+];
+const CONFUSE = [
+ ["ぬ","め","ね"],["わ","れ","ね"],["る","ろ"],["き","さ","ち"],["は","ほ","ま"],
+ ["う","つ","ら"],["こ","に","た"],["し","も","と"],["す","む"],["あ","お"],["や","ゆ","よ"]
+];
+
+/* ================= 學習紀錄 ================= */
+const STORE_KEY = "kana50v1";
+let stats = {};
+try{ stats = JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }catch(e){ stats = {} }
+function saveStats(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(stats)) }catch(e){} }
+function getStat(k){ return stats[k] || {c:0,w:0,s:0} }
+function record(k, ok){
+  const st = getStat(k);
+  if(ok){ st.c++; st.s++; } else { st.w++; st.s=0; }
+  stats[k] = st; saveStats();
+}
+function mastery(k){
+  const st = getStat(k);
+  if(st.c+st.w === 0) return "new";
+  if(st.s >= 3) return "good";
+  if(st.w > st.c) return "weak";
+  return "mid";
+}
+
+/* ================= 發音 ================= */
+let jaVoice = null;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  jaVoice = vs.find(v=>v.lang.startsWith("ja")) || null;
+}
+if("speechSynthesis" in window){
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+function speak(text){
+  if(!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "ja-JP";
+  if(jaVoice) u.voice = jaVoice;
+  u.rate = 0.85;
+  speechSynthesis.speak(u);
+}
+
+/* ================= 共用 ================= */
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function el(id){ return document.getElementById(id) }
+function wordHTML(d, cls){
+  return d.w.split("").map((ch,i)=> i===d.wi ? `<span class="${cls}">${ch}</span>` : ch).join("");
+}
+
+/* ================= 分頁切換 ================= */
+const tabs = {cards:el("view-cards"), quiz:el("view-quiz"), game:el("view-game"), progress:el("view-progress")};
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    Object.values(tabs).forEach(v=>v.classList.add("hidden"));
+    tabs[btn.dataset.tab].classList.remove("hidden");
+    if(btn.dataset.tab==="progress") renderProgress();
+    if(btn.dataset.tab==="game" && !gameStarted) startGame();
+  });
+});
+
+/* ================= 字卡 ================= */
+function renderKanaGrid(container, onTap){
+  container.innerHTML = "";
+  ROWS.forEach(row=>{
+    row.forEach(k=>{
+      const cell = document.createElement("button");
+      cell.className = "kana-cell";
+      if(k===null){ cell.classList.add("grid-gap"); cell.tabIndex=-1; }
+      else{
+        cell.classList.add("m"+"-"+mastery(k));
+        const d = DATA[IDX[k]];
+        cell.innerHTML = `<div class="k kana-font">${k}</div><div class="r">${d.r}</div>`;
+        cell.addEventListener("click", ()=>onTap(IDX[k]));
+      }
+      container.appendChild(cell);
+    });
+  });
+}
+let cardIdx = 0;
+function openCard(i){
+  cardIdx = i;
+  const d = DATA[i];
+  el("cKana").textContent = d.k;
+  el("cRomaji").textContent = d.r;
+  el("cSrc").textContent = d.k + " ← 來自「" + d.src + "」";
+  el("cEmoji").textContent = d.e;
+  el("cWord").innerHTML = wordHTML(d,"hl");
+  el("cMean").textContent = d.m;
+  el("cTip").innerHTML = "<b>口訣</b>　" + d.tip;
+  el("cardPos").textContent = (i+1) + " / " + DATA.length;
+  el("cardOverlay").classList.remove("hidden");
+  speak(d.k);
+}
+el("cardClose").addEventListener("click", ()=>{
+  el("cardOverlay").classList.add("hidden");
+  renderKanaGrid(el("cardsGrid"), openCard);
+});
+el("cardPrev").addEventListener("click", ()=>openCard((cardIdx-1+DATA.length)%DATA.length));
+el("cardNext").addEventListener("click", ()=>openCard((cardIdx+1)%DATA.length));
+el("speakKana").addEventListener("click", ()=>speak(DATA[cardIdx].k));
+el("speakWord").addEventListener("click", ()=>speak(DATA[cardIdx].w));
+renderKanaGrid(el("cardsGrid"), openCard);
+
+/* ================= 測驗 ================= */
+const QUIZ_LEN = 10;
+let quiz = null;
+function weightOf(k){
+  const m = mastery(k);
+  return m==="weak" ? 5 : m==="mid" ? 3 : m==="new" ? 2 : 1;
+}
+function pickTargets(mode, n){
+  let pool = DATA.map(d=>d.k);
+  if(mode==="weak"){
+    const weakPool = pool.filter(k=>{ const m=mastery(k); return m==="weak"||m==="mid" });
+    if(weakPool.length >= 4) pool = weakPool;
+  }
+  const picked = [];
+  const avail = pool.slice();
+  while(picked.length < n && avail.length){
+    let total = 0;
+    const ws = avail.map(k=>{ total += weightOf(k); return total });
+    const r = Math.random()*total;
+    let idx = ws.findIndex(w=>r<w);
+    if(idx<0) idx = avail.length-1;
+    picked.push(avail.splice(idx,1)[0]);
+    if(!avail.length && picked.length<n) avail.push(...pool);
+  }
+  return picked;
+}
+function distractors(k, n){
+  const set = new Set();
+  CONFUSE.forEach(g=>{ if(g.includes(k)) g.forEach(x=>{ if(x!==k) set.add(x) }) });
+  const cands = shuffle([...set]);
+  const rest = shuffle(DATA.map(d=>d.k).filter(x=>x!==k && !set.has(x)));
+  return cands.concat(rest).slice(0,n);
+}
+document.querySelectorAll(".mode-btn").forEach(b=>{
+  b.addEventListener("click", ()=>startQuiz(b.dataset.mode));
+});
+function startQuiz(mode){
+  const targets = pickTargets(mode, QUIZ_LEN);
+  quiz = {mode, targets, i:0, score:0, wrong:[], answered:false};
+  el("quizMenu").classList.add("hidden");
+  el("quizResult").classList.add("hidden");
+  el("quizArea").classList.remove("hidden");
+  showQuestion();
+}
+function showQuestion(){
+  const k = quiz.targets[quiz.i];
+  const d = DATA[IDX[k]];
+  quiz.answered = false;
+  const qtype = quiz.mode==="weak" ? ["read","listen","word"][Math.floor(Math.random()*3)] : quiz.mode;
+  quiz.qtype = qtype;
+  el("quizProgress").textContent = (quiz.i+1) + " / " + QUIZ_LEN;
+  el("qFeedback").textContent = ""; el("qFeedback").className = "feedback";
+  el("qNext").classList.add("hidden");
+  const qc = el("qCard"), ag = el("ansGrid");
+  ag.innerHTML = "";
+  let choices, field;
+  if(qtype==="read"){
+    qc.innerHTML = `<div class="q-label">這個假名怎麼唸？</div><div class="q-kana kana-font">${d.k}</div>`;
+    field = "r";
+  }else if(qtype==="listen"){
+    qc.innerHTML = `<div class="q-label">聽發音，選出正確的假名</div><button class="play-big" id="qPlay">🔊 播放</button>`;
+    field = "k";
+    setTimeout(()=>speak(d.k), 250);
+    qc.querySelector("#qPlay").addEventListener("click", ()=>speak(d.k));
+  }else{
+    const blanked = d.w.split("").map((ch,i)=> i===d.wi ? '<span class="blank">◯</span>' : ch).join("");
+    qc.innerHTML = `<div class="q-label">◯ 是哪個假名？</div><div class="q-emoji">${d.e}</div><div class="q-word kana-font">${blanked}</div><div class="q-mean">${d.m}</div>`;
+    field = "k";
+  }
+  const opts = shuffle([k, ...distractors(k,3)]);
+  opts.forEach(ok=>{
+    const od = DATA[IDX[ok]];
+    const btn = document.createElement("button");
+    btn.className = "ans-btn" + (field==="r" ? " romaji-ans" : " kana-font");
+    btn.textContent = field==="r" ? od.r : od.k;
+    btn.addEventListener("click", ()=>answer(btn, ok===k, k, ag));
+    el("ansGrid").appendChild(btn);
+  });
+}
+function answer(btn, ok, k, grid){
+  if(quiz.answered) return;
+  quiz.answered = true;
+  record(k, ok);
+  const d = DATA[IDX[k]];
+  const correctText = quiz.qtype==="read" ? d.r : d.k;
+  grid.querySelectorAll(".ans-btn").forEach(b=>{
+    if(b.textContent===correctText) b.classList.add("correct");
+    else if(b===btn) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  const fb = el("qFeedback");
+  if(ok){ quiz.score++; fb.textContent = "答對了！"; fb.classList.add("ok"); }
+  else{
+    quiz.wrong.push(k);
+    fb.textContent = `是「${d.k}」（${d.r}）— ${wordText(d)}`;
+    fb.classList.add("no");
+  }
+  speak(d.k + "、" + d.w);
+  el("qNext").textContent = quiz.i+1 >= QUIZ_LEN ? "看成績" : "下一題";
+  el("qNext").classList.remove("hidden");
+}
+function wordText(d){ return d.w + "（" + d.m + "）" }
+el("qNext").addEventListener("click", ()=>{
+  quiz.i++;
+  if(quiz.i >= QUIZ_LEN) showResult(); else showQuestion();
+});
+el("quizQuit").addEventListener("click", ()=>{
+  el("quizArea").classList.add("hidden");
+  el("quizMenu").classList.remove("hidden");
+});
+function showResult(){
+  el("quizArea").classList.add("hidden");
+  el("quizResult").classList.remove("hidden");
+  el("resScore").textContent = quiz.score + " / " + QUIZ_LEN;
+  const uniq = [...new Set(quiz.wrong)];
+  el("resWrongWrap").style.display = uniq.length ? "" : "none";
+  el("resWrong").textContent = uniq.join(" ");
+}
+el("resAgain").addEventListener("click", ()=>startQuiz(quiz.mode));
+el("resBack").addEventListener("click", ()=>{
+  el("quizResult").classList.add("hidden");
+  el("quizMenu").classList.remove("hidden");
+});
+
+/* ================= 配對翻牌 ================= */
+let gameStarted = false, gOpen = [], gMoves = 0, gMatched = 0, gLock = false;
+function startGame(){
+  gameStarted = true; gOpen = []; gMoves = 0; gMatched = 0; gLock = false;
+  el("gameMoves").textContent = "翻牌 0 次";
+  el("gameDone").classList.add("hidden");
+  const picks = pickTargets("weak", 8);
+  const cards = [];
+  picks.forEach(k=>{
+    const d = DATA[IDX[k]];
+    cards.push({pair:k, text:d.k, kana:true});
+    cards.push({pair:k, text:d.r, kana:false});
+  });
+  shuffle(cards);
+  const g = el("gameGrid"); g.innerHTML = "";
+  cards.forEach(c=>{
+    const btn = document.createElement("button");
+    btn.className = "g-card" + (c.kana ? " kana-font" : "");
+    btn.dataset.pair = c.pair;
+    btn.dataset.text = c.text;
+    btn.addEventListener("click", ()=>flip(btn));
+    g.appendChild(btn);
+  });
+}
+function flip(btn){
+  if(gLock || btn.classList.contains("open") || btn.classList.contains("matched")) return;
+  btn.classList.add("open");
+  btn.textContent = btn.dataset.text;
+  gOpen.push(btn);
+  if(gOpen.length===2){
+    gMoves++;
+    el("gameMoves").textContent = "翻牌 " + gMoves + " 次";
+    const [a,b] = gOpen;
+    if(a.dataset.pair === b.dataset.pair){
+      a.classList.add("matched"); b.classList.add("matched");
+      a.classList.remove("open"); b.classList.remove("open");
+      speak(a.dataset.pair);
+      gOpen = []; gMatched++;
+      if(gMatched===8){
+        const done = el("gameDone");
+        done.textContent = "🎉 全部配對完成！共翻了 " + gMoves + " 次";
+        done.classList.remove("hidden");
+      }
+    }else{
+      gLock = true;
+      setTimeout(()=>{
+        a.classList.remove("open"); b.classList.remove("open");
+        a.textContent = ""; b.textContent = "";
+        gOpen = []; gLock = false;
+      }, 750);
+    }
+  }
+}
+el("gameRestart").addEventListener("click", startGame);
+
+/* ================= 進度 ================= */
+function renderProgress(){
+  const counts = {good:0, mid:0, weak:0, new:0};
+  DATA.forEach(d=>counts[mastery(d.k)]++);
+  el("stGood").textContent = counts.good;
+  el("stMid").textContent = counts.mid;
+  el("stWeak").textContent = counts.weak;
+  el("stNew").textContent = counts.new;
+  renderKanaGrid(el("progGrid"), openCard);
+}
+el("resetBtn").addEventListener("click", ()=>{
+  if(confirm("確定要清除所有學習紀錄嗎？")){
+    stats = {}; saveStats(); renderProgress();
+  }
+});
+</script>
