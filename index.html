@@ -101,6 +101,13 @@
     padding:10px 14px; font-size:15px; text-align:left; color:var(--ink);
   }
   .tip-box b{color:var(--accent)}
+  .sub-words{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; justify-content:center}
+  .sub-chip{
+    background:var(--indigo-soft); border:1px solid var(--line); border-radius:999px;
+    padding:7px 14px; font-size:16px; color:var(--ink);
+  }
+  .sub-chip .hl{color:var(--accent); font-weight:700}
+  .sub-chip .m{color:var(--sub); font-size:13px; margin-left:4px}
   .speak-row{display:flex; gap:10px; margin-top:16px}
   .speak-btn{
     flex:1; border:none; border-radius:12px; padding:13px 0; font-size:16px;
@@ -115,6 +122,18 @@
   }
 
   /* ---- quiz ---- */
+  .range-box{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:12px 14px; box-shadow:var(--shadow);
+  }
+  .range-box .rt{font-size:14px; font-weight:700; margin-bottom:8px}
+  .range-box .rt .cnt{color:var(--sub); font-weight:400; margin-left:6px; font-size:13px}
+  .range-chips{display:flex; flex-wrap:wrap; gap:7px}
+  .range-chip{
+    border:1.5px solid var(--line); background:none; color:var(--sub);
+    border-radius:999px; padding:6px 13px; font-size:14px;
+  }
+  .range-chip.on{border-color:var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:700}
   .mode-list{display:flex; flex-direction:column; gap:10px}
   .mode-btn{
     display:flex; align-items:center; gap:12px; text-align:left;
@@ -229,7 +248,11 @@
   <!-- 測驗 -->
   <section id="view-quiz" class="hidden">
     <div id="quizMenu" class="mode-list">
-      <p class="section-note">每回合 10 題，答錯的音會自動記錄，之後用「弱點複習」加強。</p>
+      <p class="section-note">先選測驗範圍（建議一次 1～2 行、5～10 個音），小範圍熟了再挑戰全部。每回合 10 題，答錯會自動記錄。</p>
+      <div class="range-box">
+        <div class="rt">測驗範圍<span class="cnt" id="rangeCount"></span></div>
+        <div class="range-chips" id="rangeChips"></div>
+      </div>
       <button class="mode-btn" data-mode="read"><span class="ic">👀</span><span><span class="t">看字選音</span><br><span class="d">看假名，選出正確的讀音</span></span></button>
       <button class="mode-btn" data-mode="listen"><span class="ic">👂</span><span><span class="t">聽音選字</span><br><span class="d">聽發音，選出正確的假名</span></span></button>
       <button class="mode-btn" data-mode="word"><span class="ic">🖼️</span><span><span class="t">看圖選字</span><br><span class="d">看圖片和單字，填上缺少的假名</span></span></button>
@@ -298,6 +321,7 @@
         <div class="emoji" id="cEmoji"></div>
         <div class="word kana-font" id="cWord"></div>
         <div class="mean" id="cMean"></div>
+        <div class="sub-words" id="cSubs"></div>
       </div>
       <div class="tip-box" id="cTip"></div>
       <div class="speak-row">
@@ -323,52 +347,52 @@
 "use strict";
 /* ================= 資料 ================= */
 const DATA = [
- {k:"あ",r:"a",src:"安",w:"あめ",wi:0,m:"雨",e:"☔",tip:"「安」的草書。十字上盤了一圈，像雨傘的骨架。"},
- {k:"い",r:"i",src:"以",w:"いぬ",wi:0,m:"狗",e:"🐶",tip:"「以」的左右兩點。兩筆並排，像狗豎起的兩隻耳朵。"},
- {k:"う",r:"u",src:"宇",w:"うみ",wi:0,m:"海",e:"🌊",tip:"「宇」的上半部。頭上一點，像海面冒出的浪頭。"},
- {k:"え",r:"e",src:"衣",w:"えき",wi:0,m:"車站",e:"🚉",tip:"「衣」的草書，尾巴打個勾，像鐵軌的彎道。"},
- {k:"お",r:"o",src:"於",w:"おにぎり",wi:0,m:"飯糰",e:"🍙",tip:"「於」的草書。比「あ」多一點——飯糰上多了一粒芝麻。"},
- {k:"か",r:"ka",src:"加",w:"かさ",wi:0,m:"雨傘",e:"🌂",tip:"讀音就是「加」（ka）！字形也是「加」的左半。"},
- {k:"き",r:"ki",src:"幾",w:"きつね",wi:0,m:"狐狸",e:"🦊",tip:"像一把鑰匙 key → き。兩橫一斜再一筆。"},
- {k:"く",r:"ku",src:"久",w:"くつ",wi:0,m:"鞋子",e:"👟",tip:"像張開的鳥嘴，鳥叫「く、く、く」。"},
- {k:"け",r:"ke",src:"計",w:"けむり",wi:0,m:"煙",e:"💨",tip:"「計」的草書。左邊一豎像煙囪，右邊煙往上飄。"},
- {k:"こ",r:"ko",src:"己",w:"こども",wi:0,m:"小孩",e:"🧒",tip:"「己」少一筆，剩兩橫，像瞇瞇笑的眼睛。"},
- {k:"さ",r:"sa",src:"左",w:"さかな",wi:0,m:"魚",e:"🐟",tip:"「左」的草書。和「き」長得像，但少一橫。"},
- {k:"し",r:"shi",src:"之",w:"しか",wi:0,m:"鹿",e:"🦌",tip:"一條垂下的釣魚線（shi 諧音「絲」），一筆到底。"},
- {k:"す",r:"su",src:"寸",w:"すし",wi:0,m:"壽司",e:"🍣",tip:"像吸管捲了一圈，「嘶——」地吸。"},
- {k:"せ",r:"se",src:"世",w:"せんせい",wi:0,m:"老師",e:"🧑‍🏫",tip:"就是「世」的草書，讀音也接近台語的「世」（sè）。"},
- {k:"そ",r:"so",src:"曾",w:"そら",wi:0,m:"天空",e:"🌤️",tip:"像一道閃電從天空劈下來，「唆——」。"},
- {k:"た",r:"ta",src:"太",w:"たまご",wi:0,m:"雞蛋",e:"🥚",tip:"左邊像 t、右邊像 a，合起來就是 ta。"},
- {k:"ち",r:"chi",src:"知",w:"ちず",wi:0,m:"地圖",e:"🗺️",tip:"「知」的左半，讀音像中文的「七」（chi）。"},
- {k:"つ",r:"tsu",src:"川",w:"つき",wi:0,m:"月亮",e:"🌙",tip:"像一道捲過來的海浪——海嘯 tsunami 就是つ開頭！"},
- {k:"て",r:"te",src:"天",w:"てがみ",wi:0,m:"信",e:"✉️",tip:"「天」的草書，一筆到底。て＝手，寫信要用手。"},
- {k:"と",r:"to",src:"止",w:"とり",wi:0,m:"鳥",e:"🐦",tip:"像腳趾（toe）踢到一根釘子。"},
- {k:"な",r:"na",src:"奈",w:"なつ",wi:0,m:"夏天",e:"⛱️",tip:"「奈」的草書。左邊十字、右邊一個圈。"},
- {k:"に",r:"ni",src:"仁",w:"にく",wi:0,m:"肉",e:"🍖",tip:"就是「仁」：單人旁加二。讀音像中文的「你」（ni）。"},
- {k:"ぬ",r:"nu",src:"奴",w:"ぬいぐるみ",wi:0,m:"布偶",e:"🧸",tip:"像一碗麵條（noodle）尾巴打了個結。和「め」差在有沒有這個圈！"},
- {k:"ね",r:"ne",src:"祢",w:"ねこ",wi:0,m:"貓",e:"🐱",tip:"像一隻蹲坐、尾巴捲圈的貓——貓就是ねこ。"},
- {k:"の",r:"no",src:"乃",w:"のり",wi:0,m:"海苔",e:"🍘",tip:"像禁止符號 🚫 → NO！一筆畫一個圈。"},
- {k:"は",r:"ha",src:"波",w:"はな",wi:0,m:"花",e:"🌸",tip:"「波」的草書，右下有個小圈，像花莖上的花苞。"},
- {k:"ひ",r:"hi",src:"比",w:"ひこうき",wi:0,m:"飛機",e:"✈️",tip:"像一張咧嘴笑的臉：「嘻（hi）——」。"},
- {k:"ふ",r:"fu",src:"不",w:"ふね",wi:0,m:"船",e:"⛵",tip:"像富士山（ふじさん）上飄著雪花——ふ就是富士的ふ。"},
- {k:"へ",r:"he",src:"部",w:"へび",wi:0,m:"蛇",e:"🐍",tip:"像一座小山坡，慢慢「爬」上去。最簡單的一個字！"},
- {k:"ほ",r:"ho",src:"保",w:"ほし",wi:0,m:"星星",e:"⭐",tip:"「保」的右半。比「は」多一橫，像多掛了一顆星。"},
- {k:"ま",r:"ma",src:"末",w:"まど",wi:0,m:"窗戶",e:"🪟",tip:"「末」的草書，尾巴捲個圈。媽（ma）媽在窗邊。"},
- {k:"み",r:"mi",src:"美",w:"みず",wi:0,m:"水",e:"💧",tip:"「美」的草書。像數字 21 連在一起，諧音「咪」。"},
- {k:"む",r:"mu",src:"武",w:"むし",wi:0,m:"蟲",e:"🐛",tip:"像一頭牛「哞——」（mu），肚子上有個圈。"},
- {k:"め",r:"me",src:"女",w:"めがね",wi:0,m:"眼鏡",e:"👓",tip:"「女」的草書。め＝目（眼睛），戴眼鏡的め。沒有尾圈，別和「ぬ」搞混！"},
- {k:"も",r:"mo",src:"毛",w:"もも",wi:0,m:"桃子",e:"🍑",tip:"就是「毛」！讀音也像「毛」（mo）。"},
- {k:"や",r:"ya",src:"也",w:"やま",wi:0,m:"山",e:"⛰️",tip:"「也」的草書，讀音也是「也」（ya）。"},
- {k:"ゆ",r:"yu",src:"由",w:"ゆき",wi:0,m:"雪",e:"❄️",tip:"「由」的草書，像一條魚（yu 諧音「魚」）游過去。"},
- {k:"よ",r:"yo",src:"与",w:"よる",wi:0,m:"夜晚",e:"🌃",tip:"像一顆垂下來的溜溜球（yo-yo）。"},
- {k:"ら",r:"ra",src:"良",w:"らくだ",wi:0,m:"駱駝",e:"🐫",tip:"「良」的草書，頭上一點，像駱駝的駝峰。"},
- {k:"り",r:"ri",src:"利",w:"りんご",wi:0,m:"蘋果",e:"🍎",tip:"「利」的右半「刂」，兩筆垂下，右邊比較長。"},
- {k:"る",r:"ru",src:"留",w:"さる",wi:1,m:"猴子",e:"🐵",tip:"像數字 3 尾巴多繞一圈——那個圈把音「留」住了。"},
- {k:"れ",r:"re",src:"礼",w:"れいぞうこ",wi:0,m:"冰箱",e:"🧊",tip:"就是「礼」：左邊一豎，右邊尾巴往上翹。"},
- {k:"ろ",r:"ro",src:"呂",w:"ろうそく",wi:0,m:"蠟燭",e:"🕯️",tip:"「る」的兄弟——少了尾圈，就是一個光溜溜的 3。"},
- {k:"わ",r:"wa",src:"和",w:"わに",wi:0,m:"鱷魚",e:"🐊",tip:"讀音就是「和」（wa）。ね・れ・わ 三兄弟：貓有尾圈、礼往上翹、わ圓圓收。"},
- {k:"を",r:"wo",src:"遠",w:"ほんをよむ",wi:2,m:"讀書",e:"📖",tip:"只當助詞用的字（讀 o）。「本を読む」＝讀書。像「ち」多了一撇。"},
- {k:"ん",r:"n",src:"无",w:"ぱん",wi:1,m:"麵包",e:"🍞",tip:"像英文小寫 n 的草寫，讀音剛好就是 n。唯一不當開頭的音。"}
+ {k:"あ",r:"a",src:"安",w:"あめ",wi:0,m:"雨",e:"☔",tipS:"「阿（a）嬤」下雨天撐傘。",tipI:"「安」的草書：十字上盤一圈，像被風吹翻的傘骨。",sub:[{w:"あさ",wi:0,m:"早晨",e:"🌅"},{w:"あし",wi:0,m:"腳",e:"🦶"}]},
+ {k:"い",r:"i",src:"以",w:"いぬ",wi:0,m:"狗",e:"🐶",tipS:"小狗「咿（i）～咿～」叫。",tipI:"「以」的左右兩點，像狗豎起的兩隻耳朵。",sub:[{w:"いえ",wi:0,m:"家",e:"🏠"},{w:"いす",wi:0,m:"椅子",e:"🪑"}]},
+ {k:"う",r:"u",src:"宇",w:"うみ",wi:0,m:"海",e:"🌊",tipS:"海上「烏（u）」雲密布。",tipI:"「宇」的上半：頭上一點，像海面冒出的浪頭。",sub:[{w:"うた",wi:0,m:"歌",e:"🎵"},{w:"うし",wi:0,m:"牛",e:"🐮"}]},
+ {k:"え",r:"e",src:"衣",w:"えき",wi:0,m:"車站",e:"🚉",tipS:"「ㄟ（e）！車站到了！」",tipI:"「衣」的草書，尾巴打勾像鐵軌的彎道。",sub:[{w:"えほん",wi:0,m:"繪本",e:"📕"},{w:"えび",wi:0,m:"蝦子",e:"🦐"}]},
+ {k:"お",r:"o",src:"於",w:"おにぎり",wi:0,m:"飯糰",e:"🍙",tipS:"「喔（o）！飯糰掉了！」",tipI:"比「あ」多一點——飯糰上多了一粒芝麻。",sub:[{w:"おちゃ",wi:0,m:"茶",e:"🍵"},{w:"おかね",wi:0,m:"錢",e:"💰"}]},
+ {k:"か",r:"ka",src:"加",w:"かさ",wi:0,m:"雨傘",e:"🌂",tipS:"讀音就是中文的「加」（ka）！",tipI:"字形就是「加」的左半，再加一點。",sub:[{w:"かみ",wi:0,m:"紙",e:"📄"},{w:"かお",wi:0,m:"臉",e:"😊"}]},
+ {k:"き",r:"ki",src:"幾",w:"きつね",wi:0,m:"狐狸",e:"🦊",tipS:"key（ki）＝鑰匙。",tipI:"兩橫一豎，像一把鑰匙。",sub:[{w:"き",wi:0,m:"樹",e:"🌳"},{w:"きって",wi:0,m:"郵票",e:"📮"}]},
+ {k:"く",r:"ku",src:"久",w:"くつ",wi:0,m:"鞋子",e:"👟",tipS:"鳥叫「咕（ku）、咕、咕」。",tipI:"像一張張開的鳥嘴。",sub:[{w:"くも",wi:0,m:"雲",e:"☁️"},{w:"くち",wi:0,m:"嘴巴",e:"👄"}]},
+ {k:"け",r:"ke",src:"計",w:"けむり",wi:0,m:"煙",e:"💨",tipS:"注音「ㄎㄟ（ke）」。",tipI:"左邊一豎是煙囪，右邊是往上飄的煙。",sub:[{w:"けが",wi:0,m:"受傷",e:"🩹"},{w:"けいたい",wi:0,m:"手機",e:"📱"}]},
+ {k:"こ",r:"ko",src:"己",w:"こども",wi:0,m:"小孩",e:"🧒",tipS:"小孩「呵呵（ko ko）」笑。",tipI:"「己」少一筆剩兩橫，像瞇瞇笑的眼睛。",sub:[{w:"こえ",wi:0,m:"聲音",e:"🗣️"},{w:"こめ",wi:0,m:"米",e:"🍚"}]},
+ {k:"さ",r:"sa",src:"左",w:"さかな",wi:0,m:"魚",e:"🐟",tipS:"「撒（sa）」網捕魚。",tipI:"和「き」長得像，但少一橫。",sub:[{w:"さくら",wi:0,m:"櫻花",e:"🌸"},{w:"さとう",wi:0,m:"砂糖",e:"🍬"}]},
+ {k:"し",r:"shi",src:"之",w:"しか",wi:0,m:"鹿",e:"🦌",tipS:"「絲（shi）」線垂下來。",tipI:"一筆到底，像一條垂下的釣魚線。",sub:[{w:"しお",wi:0,m:"鹽",e:"🧂"},{w:"しろ",wi:0,m:"白色",e:"⬜"}]},
+ {k:"す",r:"su",src:"寸",w:"すし",wi:0,m:"壽司",e:"🍣",tipS:"用吸管「嘶（su）——」地吸。",tipI:"像一根捲了一圈的吸管。",sub:[{w:"すいか",wi:0,m:"西瓜",e:"🍉"},{w:"すな",wi:0,m:"沙子",e:"🏖️"}]},
+ {k:"せ",r:"se",src:"世",w:"せんせい",wi:0,m:"老師",e:"🧑‍🏫",tipS:"台語的「世（sè）」。",tipI:"就是「世」字寫圓一點。",sub:[{w:"せかい",wi:0,m:"世界",e:"🌍"},{w:"せなか",wi:0,m:"背部",e:"🧍"}]},
+ {k:"そ",r:"so",src:"曾",w:"そら",wi:0,m:"天空",e:"🌤️",tipS:"閃電「唆（so）——」地劈下。",tipI:"就是一道閃電的形狀。",sub:[{w:"そば",wi:0,m:"蕎麥麵",e:"🍜"},{w:"そと",wi:0,m:"外面",e:"🚪"}]},
+ {k:"た",r:"ta",src:"太",w:"たまご",wi:0,m:"雞蛋",e:"🥚",tipS:"讀音像「他（ta）」。",tipI:"左邊是 t、右邊是 a，合起來 ta。",sub:[{w:"たこ",wi:0,m:"章魚",e:"🐙"},{w:"たいよう",wi:0,m:"太陽",e:"☀️"}]},
+ {k:"ち",r:"chi",src:"知",w:"ちず",wi:0,m:"地圖",e:"🗺️",tipS:"讀音像中文的「七（chi）」。",tipI:"像數字 5 左右反轉。",sub:[{w:"ちち",wi:0,m:"爸爸",e:"👨"},{w:"ちから",wi:0,m:"力量",e:"💪"}]},
+ {k:"つ",r:"tsu",src:"川",w:"つき",wi:0,m:"月亮",e:"🌙",tipS:"海嘯 tsunami 就是つ開頭！",tipI:"像一道捲過來的海浪。",sub:[{w:"つめ",wi:0,m:"指甲",e:"💅"},{w:"つゆ",wi:0,m:"梅雨",e:"🌧️"}]},
+ {k:"て",r:"te",src:"天",w:"てがみ",wi:0,m:"信",e:"✉️",tipS:"て＝手（te），寫信要用手。",tipI:"「天」的草書，一筆到底像手臂彎起。",sub:[{w:"てんき",wi:0,m:"天氣",e:"🌤️"},{w:"てら",wi:0,m:"寺廟",e:"🛕"}]},
+ {k:"と",r:"to",src:"止",w:"とり",wi:0,m:"鳥",e:"🐦",tipS:"腳趾 toe（to）。",tipI:"像腳趾踢到一根釘子。",sub:[{w:"ともだち",wi:0,m:"朋友",e:"👭"},{w:"とけい",wi:0,m:"時鐘",e:"⏰"}]},
+ {k:"な",r:"na",src:"奈",w:"なつ",wi:0,m:"夏天",e:"⛱️",tipS:"讀音像「拿（na）」。",tipI:"左邊十字、右邊一個圈，像打了個結。",sub:[{w:"なまえ",wi:0,m:"名字",e:"📛"},{w:"なし",wi:0,m:"梨子",e:"🍐"}]},
+ {k:"に",r:"ni",src:"仁",w:"にく",wi:0,m:"肉",e:"🍖",tipS:"讀音像中文的「你（ni）」。",tipI:"就是「仁」：單人旁加二。",sub:[{w:"にほん",wi:0,m:"日本",e:"🗾"},{w:"にわ",wi:0,m:"庭院",e:"🏡"}]},
+ {k:"ぬ",r:"nu",src:"奴",w:"ぬいぐるみ",wi:0,m:"布偶",e:"🧸",tipS:"麵條 noodle（nu）。",tipI:"麵條尾巴打了個結——和「め」差在有沒有這個圈！",sub:[{w:"ぬま",wi:0,m:"沼澤",e:"🐸"},{w:"ぬりえ",wi:0,m:"著色本",e:"🖍️"}]},
+ {k:"ね",r:"ne",src:"祢",w:"ねこ",wi:0,m:"貓",e:"🐱",tipS:"貓＝ねこ（ne），ね就是貓。",tipI:"像一隻蹲坐、尾巴捲圈的貓。",sub:[{w:"ねずみ",wi:0,m:"老鼠",e:"🐭"},{w:"ねつ",wi:0,m:"發燒",e:"🤒"}]},
+ {k:"の",r:"no",src:"乃",w:"のり",wi:0,m:"海苔",e:"🍘",tipS:"NO（no）！",tipI:"一筆畫一個圈，像禁止符號 🚫。",sub:[{w:"のみもの",wi:0,m:"飲料",e:"🥤"},{w:"のはら",wi:0,m:"原野",e:"🌾"}]},
+ {k:"は",r:"ha",src:"波",w:"はな",wi:0,m:"花",e:"🌸",tipS:"花開了「哈哈（ha）」笑。",tipI:"「波」的草書，右下小圈像花莖上的花苞。",sub:[{w:"はし",wi:0,m:"筷子",e:"🥢"},{w:"はち",wi:0,m:"蜜蜂",e:"🐝"}]},
+ {k:"ひ",r:"hi",src:"比",w:"ひこうき",wi:0,m:"飛機",e:"✈️",tipS:"「嘻（hi）——」地笑。",tipI:"像一張咧嘴笑的嘴形。",sub:[{w:"ひ",wi:0,m:"火",e:"🔥"},{w:"ひる",wi:0,m:"中午",e:"🕛"}]},
+ {k:"ふ",r:"fu",src:"不",w:"ふね",wi:0,m:"船",e:"⛵",tipS:"富（fu）士山的ふ。",tipI:"像富士山上飄著雪花。",sub:[{w:"ふゆ",wi:0,m:"冬天",e:"⛄"},{w:"ふとん",wi:0,m:"棉被",e:"🛏️"}]},
+ {k:"へ",r:"he",src:"部",w:"へび",wi:0,m:"蛇",e:"🐍",tipS:"爬坡喊「嘿（he）！」",tipI:"像一座小山坡，最簡單的一個字。",sub:[{w:"へや",wi:0,m:"房間",e:"🚪"},{w:"へいわ",wi:0,m:"和平",e:"🕊️"}]},
+ {k:"ほ",r:"ho",src:"保",w:"ほし",wi:0,m:"星星",e:"⭐",tipS:"看到滿天星「齁（ho）～」。",tipI:"比「は」多一橫，像多掛了一顆星。",sub:[{w:"ほん",wi:0,m:"書",e:"📚"},{w:"ほね",wi:0,m:"骨頭",e:"🦴"}]},
+ {k:"ま",r:"ma",src:"末",w:"まど",wi:0,m:"窗戶",e:"🪟",tipS:"「媽（ma）」媽在窗邊。",tipI:"「末」的草書，尾巴捲圈像打結的窗簾繩。",sub:[{w:"まめ",wi:0,m:"豆子",e:"🫘"},{w:"まち",wi:0,m:"城鎮",e:"🏙️"}]},
+ {k:"み",r:"mi",src:"美",w:"みず",wi:0,m:"水",e:"💧",tipS:"水滴「咪（mi）」地滴下。",tipI:"像數字 21 連在一起寫。",sub:[{w:"みみ",wi:0,m:"耳朵",e:"👂"},{w:"みかん",wi:0,m:"橘子",e:"🍊"}]},
+ {k:"む",r:"mu",src:"武",w:"むし",wi:0,m:"蟲",e:"🐛",tipS:"牛「哞（mu）——」。",tipI:"像一頭牛，肚子上有個圈。",sub:[{w:"むら",wi:0,m:"村莊",e:"🏘️"},{w:"むぎ",wi:0,m:"麥子",e:"🌾"}]},
+ {k:"め",r:"me",src:"女",w:"めがね",wi:0,m:"眼鏡",e:"👓",tipS:"め＝目（me），就是眼睛。",tipI:"像眼睛的輪廓。沒有尾圈，別和「ぬ」搞混！",sub:[{w:"め",wi:0,m:"眼睛",e:"👁️"},{w:"かめ",wi:1,m:"烏龜",e:"🐢"}]},
+ {k:"も",r:"mo",src:"毛",w:"もも",wi:0,m:"桃子",e:"🍑",tipS:"讀音就像「毛（mo）」。",tipI:"字形就是「毛」！",sub:[{w:"もり",wi:0,m:"森林",e:"🌲"},{w:"もち",wi:0,m:"麻糬",e:"🍡"}]},
+ {k:"や",r:"ya",src:"也",w:"やま",wi:0,m:"山",e:"⛰️",tipS:"讀音就是「也（ya）」。",tipI:"就是「也」的草書。",sub:[{w:"やさい",wi:0,m:"蔬菜",e:"🥬"},{w:"やね",wi:0,m:"屋頂",e:"🏠"}]},
+ {k:"ゆ",r:"yu",src:"由",w:"ゆき",wi:0,m:"雪",e:"❄️",tipS:"「魚（yu）」游過去。",tipI:"「由」的草書，像一條魚穿過水草。",sub:[{w:"ゆび",wi:0,m:"手指",e:"👆"},{w:"ゆめ",wi:0,m:"夢",e:"💭"}]},
+ {k:"よ",r:"yo",src:"与",w:"よる",wi:0,m:"夜晚",e:"🌃",tipS:"溜溜球 yo-yo（yo）。",tipI:"像一顆垂下來的溜溜球。",sub:[{w:"よん",wi:0,m:"四",e:"4️⃣"},{w:"よこ",wi:0,m:"旁邊",e:"↔️"}]},
+ {k:"ら",r:"ra",src:"良",w:"らくだ",wi:0,m:"駱駝",e:"🐫",tipS:"駱駝唱「啦（ra）啦啦」。",tipI:"「良」的草書，頭上一點像駝峰。",sub:[{w:"らいねん",wi:0,m:"明年",e:"📅"},{w:"とら",wi:1,m:"老虎",e:"🐯"}]},
+ {k:"り",r:"ri",src:"利",w:"りんご",wi:0,m:"蘋果",e:"🍎",tipS:"讀音像「利（ri）」。",tipI:"「利」的右半「刂」：兩筆垂下，右邊較長。",sub:[{w:"りす",wi:0,m:"松鼠",e:"🐿️"},{w:"りょこう",wi:0,m:"旅行",e:"🧳"}]},
+ {k:"る",r:"ru",src:"留",w:"さる",wi:1,m:"猴子",e:"🐵",tipS:"猴子喉嚨「嚕（ru）嚕」叫。",tipI:"數字 3 尾巴多繞一圈——圈把音「留」住。",sub:[{w:"くるま",wi:1,m:"車子",e:"🚗"},{w:"はる",wi:1,m:"春天",e:"🌷"}]},
+ {k:"れ",r:"re",src:"礼",w:"れいぞうこ",wi:0,m:"冰箱",e:"🧊",tipS:"敬「礼（re）」！",tipI:"就是「礼」：左邊一豎，右邊尾巴往上翹。",sub:[{w:"れきし",wi:0,m:"歷史",e:"📜"},{w:"れんこん",wi:0,m:"蓮藕",e:"🪷"}]},
+ {k:"ろ",r:"ro",src:"呂",w:"ろうそく",wi:0,m:"蠟燭",e:"🕯️",tipS:"「囉（ro）」——蠟燭熄了。",tipI:"「る」的兄弟：少了尾圈，光溜溜的 3。",sub:[{w:"ろば",wi:0,m:"驢子",e:"🫏"},{w:"ふろ",wi:1,m:"泡澡",e:"🛁"}]},
+ {k:"わ",r:"wa",src:"和",w:"わに",wi:0,m:"鱷魚",e:"🐊",tipS:"讀音就是「和（wa）」。",tipI:"ね・れ・わ 三兄弟：貓有尾圈、礼往上翹、わ圓圓收。",sub:[{w:"わたし",wi:0,m:"我",e:"🙋"},{w:"かわ",wi:1,m:"河川",e:"🏞️"}]},
+ {k:"を",r:"wo",src:"遠",w:"ほんをよむ",wi:2,m:"讀書",e:"📖",tipS:"只當助詞用，讀 o。",tipI:"像「ち」多了一撇。",sub:[{w:"みずをのむ",wi:2,m:"喝水",e:"🥤"},{w:"てをあらう",wi:1,m:"洗手",e:"🧼"}]},
+ {k:"ん",r:"n",src:"无",w:"ぱん",wi:1,m:"麵包",e:"🍞",tipS:"讀音剛好就是 n。",tipI:"像英文小寫 n 的草寫。唯一不當字首的音。",sub:[{w:"うどん",wi:2,m:"烏龍麵",e:"🍜"},{w:"ほん",wi:1,m:"書",e:"📚"}]}
 ];
 const IDX = {}; DATA.forEach((d,i)=>IDX[d.k]=i);
 const ROWS = [
@@ -472,7 +496,15 @@ function openCard(i){
   el("cEmoji").textContent = d.e;
   el("cWord").innerHTML = wordHTML(d,"hl");
   el("cMean").textContent = d.m;
-  el("cTip").innerHTML = "<b>口訣</b>　" + d.tip;
+  const subs = el("cSubs"); subs.innerHTML = "";
+  d.sub.forEach(s=>{
+    const chip = document.createElement("button");
+    chip.className = "sub-chip kana-font";
+    chip.innerHTML = "🔊 " + wordHTML(s,"hl") + `<span class="m">${s.m}${s.e ? " "+s.e : ""}</span>`;
+    chip.addEventListener("click", ()=>speak(s.w));
+    subs.appendChild(chip);
+  });
+  el("cTip").innerHTML = "<b>諧音</b>　" + d.tipS + "<br><b>圖像</b>　" + d.tipI;
   el("cardPos").textContent = (i+1) + " / " + DATA.length;
   el("cardOverlay").classList.remove("hidden");
   speak(d.k);
@@ -487,6 +519,54 @@ el("speakKana").addEventListener("click", ()=>speak(DATA[cardIdx].k));
 el("speakWord").addEventListener("click", ()=>speak(DATA[cardIdx].w));
 renderKanaGrid(el("cardsGrid"), openCard);
 
+/* ================= 測驗範圍 ================= */
+const RANGE_ROWS = [
+ {n:"あ行",ks:["あ","い","う","え","お"]},
+ {n:"か行",ks:["か","き","く","け","こ"]},
+ {n:"さ行",ks:["さ","し","す","せ","そ"]},
+ {n:"た行",ks:["た","ち","つ","て","と"]},
+ {n:"な行",ks:["な","に","ぬ","ね","の"]},
+ {n:"は行",ks:["は","ひ","ふ","へ","ほ"]},
+ {n:"ま行",ks:["ま","み","む","め","も"]},
+ {n:"や行",ks:["や","ゆ","よ"]},
+ {n:"ら行",ks:["ら","り","る","れ","ろ"]},
+ {n:"わ・を・ん",ks:["わ","を","ん"]}
+];
+let rangeSel = [];
+try{ rangeSel = JSON.parse(localStorage.getItem("kana50range") || "[]") }catch(e){ rangeSel = [] }
+function rangeKanas(){
+  if(!rangeSel.length) return DATA.map(d=>d.k);
+  const out = [];
+  RANGE_ROWS.forEach(r=>{ if(rangeSel.includes(r.n)) out.push(...r.ks) });
+  return out.length ? out : DATA.map(d=>d.k);
+}
+function saveRange(){
+  try{ localStorage.setItem("kana50range", JSON.stringify(rangeSel)) }catch(e){}
+  gameStarted = false;
+  renderRange();
+}
+function renderRange(){
+  const box = el("rangeChips"); box.innerHTML = "";
+  const all = document.createElement("button");
+  all.className = "range-chip" + (rangeSel.length ? "" : " on");
+  all.textContent = "全部";
+  all.addEventListener("click", ()=>{ rangeSel = []; saveRange(); });
+  box.appendChild(all);
+  RANGE_ROWS.forEach(r=>{
+    const b = document.createElement("button");
+    b.className = "range-chip" + (rangeSel.includes(r.n) ? " on" : "");
+    b.textContent = r.n;
+    b.addEventListener("click", ()=>{
+      if(rangeSel.includes(r.n)) rangeSel = rangeSel.filter(x=>x!==r.n);
+      else rangeSel.push(r.n);
+      saveRange();
+    });
+    box.appendChild(b);
+  });
+  el("rangeCount").textContent = "目前 " + rangeKanas().length + " 個音";
+}
+renderRange();
+
 /* ================= 測驗 ================= */
 const QUIZ_LEN = 10;
 let quiz = null;
@@ -495,7 +575,7 @@ function weightOf(k){
   return m==="weak" ? 5 : m==="mid" ? 3 : m==="new" ? 2 : 1;
 }
 function pickTargets(mode, n){
-  let pool = DATA.map(d=>d.k);
+  let pool = rangeKanas();
   if(mode==="weak"){
     const weakPool = pool.filter(k=>{ const m=mastery(k); return m==="weak"||m==="mid" });
     if(weakPool.length >= 4) pool = weakPool;
@@ -617,7 +697,11 @@ function startGame(){
   gameStarted = true; gOpen = []; gMoves = 0; gMatched = 0; gLock = false;
   el("gameMoves").textContent = "翻牌 0 次";
   el("gameDone").classList.add("hidden");
-  const picks = pickTargets("weak", 8);
+  let picks = shuffle(rangeKanas().slice()).slice(0,8);
+  if(picks.length < 8){
+    const extra = shuffle(DATA.map(d=>d.k).filter(k=>!picks.includes(k))).slice(0, 8-picks.length);
+    picks = picks.concat(extra);
+  }
   const cards = [];
   picks.forEach(k=>{
     const d = DATA[IDX[k]];
