@@ -68,6 +68,8 @@
   .kana-cell.m-new{border-bottom-color:var(--new)}
   .kana-cell:active{transform:scale(.95)}
   .grid-gap{visibility:hidden}
+  .grid-label{margin:18px 2px 8px; font-size:14px; font-weight:700; color:var(--sub)}
+  .kana-cell .kk{font-size:12px; color:var(--sub); margin-left:3px}
 
   /* ---- card overlay ---- */
   #cardOverlay{
@@ -87,6 +89,8 @@
   }
   .flashcard .big-kana{font-size:96px; line-height:1.1; color:var(--accent)}
   .flashcard .romaji{font-size:20px; color:var(--sub); letter-spacing:.15em; margin-top:2px}
+  .kata-line{margin-top:6px; color:var(--sub); font-size:13px}
+  .kata-line .kata-big{font-size:26px; color:var(--indigo); margin-left:6px}
   .src-chip{
     display:inline-block; margin-top:10px; padding:3px 12px; border-radius:999px;
     background:var(--indigo-soft); color:var(--indigo); font-size:14px;
@@ -101,6 +105,8 @@
     padding:10px 14px; font-size:15px; text-align:left; color:var(--ink);
   }
   .tip-box b{color:var(--accent)}
+  .tap-hint{margin-top:14px; color:var(--sub); font-size:13px}
+  .flashcard .big-kana,.word-block,.kata-line .kata-big{cursor:pointer}
   .sub-words{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; justify-content:center}
   .sub-chip{
     background:var(--indigo-soft); border:1px solid var(--line); border-radius:999px;
@@ -248,13 +254,15 @@
 <div id="app">
   <header class="top">
     <h1>50音字卡</h1>
-    <span class="sub" id="topSub">平假名・清音 46 字</span>
+    <span class="sub" id="topSub">清音 46＋濁音 25・附片假名</span>
   </header>
 
   <!-- 字卡 -->
   <section id="view-cards">
-    <p class="section-note">點任一個假名打開字卡。格子下緣的顏色是熟練度（綠＝熟、黃＝學習中、紅＝不熟）。</p>
+    <p class="section-note">點任一個假名打開字卡（小字是對應的片假名）。格子下緣的顏色是熟練度（綠＝熟、黃＝學習中、紅＝不熟）。</p>
     <div class="kana-grid" id="cardsGrid"></div>
+    <div class="grid-label">濁音・半濁音</div>
+    <div class="kana-grid" id="cardsGridDaku"></div>
   </section>
 
   <!-- 測驗 -->
@@ -268,6 +276,7 @@
       <button class="mode-btn" data-mode="read"><span class="ic">👀</span><span><span class="t">看字選音</span><br><span class="d">看假名，選出正確的讀音</span></span></button>
       <button class="mode-btn" data-mode="listen"><span class="ic">👂</span><span><span class="t">聽音選字</span><br><span class="d">聽發音，選出正確的假名</span></span></button>
       <button class="mode-btn" data-mode="word"><span class="ic">🖼️</span><span><span class="t">看圖選字</span><br><span class="d">看圖片和單字，填上缺少的假名</span></span></button>
+      <button class="mode-btn" data-mode="kata"><span class="ic">🔁</span><span><span class="t">平片配對</span><br><span class="d">平假名和片假名互相對應</span></span></button>
       <button class="mode-btn" data-mode="weak"><span class="ic">🔥</span><span><span class="t">弱點複習</span><br><span class="d">混合題型，專攻你答錯過、還不熟的音</span></span></button>
     </div>
     <div id="quizArea" class="hidden">
@@ -294,7 +303,11 @@
 
   <!-- 遊戲 -->
   <section id="view-game" class="hidden">
-    <p class="section-note">配對翻牌：把假名和它的讀音配成一對。</p>
+    <p class="section-note">配對翻牌：選一種玩法，把成對的牌找出來。</p>
+    <div class="range-chips" style="margin-bottom:10px">
+      <button class="range-chip on" id="gmSound">假名⇄讀音</button>
+      <button class="range-chip" id="gmKata">平⇄片</button>
+    </div>
     <div class="game-info"><span id="gameMoves">翻牌 0 次</span><button class="icon-btn" id="gameRestart">🔄 重新開始</button></div>
     <div class="game-grid" id="gameGrid"></div>
     <div class="game-done hidden" id="gameDone"></div>
@@ -315,6 +328,8 @@
       <span><span class="dot" style="background:var(--new)"></span>未測驗</span>
     </div>
     <div class="kana-grid" id="progGrid"></div>
+    <div class="grid-label">濁音・半濁音</div>
+    <div class="kana-grid" id="progGridDaku"></div>
     <button class="danger-btn" id="resetBtn">清除所有學習紀錄</button>
   </section>
 </div>
@@ -329,18 +344,16 @@
     <div class="flashcard">
       <div class="big-kana kana-font" id="cKana"></div>
       <div class="romaji" id="cRomaji"></div>
+      <div class="kata-line">片假名<span class="kata-big kana-font" id="cKata"></span></div>
       <div><span class="src-chip" id="cSrc"></span></div>
-      <div class="word-block">
+      <div class="word-block" id="cWordBlock">
         <div class="emoji" id="cEmoji"></div>
         <div class="word kana-font" id="cWord"></div>
         <div class="mean" id="cMean"></div>
         <div class="sub-words" id="cSubs"></div>
       </div>
       <div class="tip-box" id="cTip"></div>
-      <div class="speak-row">
-        <button class="speak-btn" id="speakKana">🔊 唸假名</button>
-        <button class="speak-btn alt" id="speakWord">🔊 唸單字</button>
-      </div>
+      <div class="tap-hint">🔊 點大字唸假名．點圖片或單字唸單字</div>
     </div>
     <div class="nav-row">
       <button class="nav-btn" id="cardPrev">← 上一個</button>
@@ -405,7 +418,32 @@ const DATA = [
  {k:"ろ",r:"ro",src:"呂",w:"ろうそく",wi:0,m:"蠟燭",e:"🕯️",tipS:"「囉（ro）」——蠟燭熄了。",tipI:"「る」的兄弟：少了尾圈，光溜溜的 3。",sub:[{w:"ろば",wi:0,m:"驢子",e:"🫏"},{w:"ふろ",wi:1,m:"泡澡",e:"🛁"}]},
  {k:"わ",r:"wa",src:"和",w:"わに",wi:0,m:"鱷魚",e:"🐊",tipS:"讀音就是「和（wa）」。",tipI:"尾巴收成一個圓——日文的「輪（wa）」就是圓圈。",sub:[{w:"わたし",wi:0,m:"我",e:"🙋"},{w:"かわ",wi:1,m:"河川",e:"🏞️"}]},
  {k:"を",r:"wo",src:"遠",w:"ほんをよむ",wi:2,m:"讀書",e:"📖",tipS:"只當助詞用，讀 o。",tipI:"像「ち」多了一撇。",sub:[{w:"みずをのむ",wi:2,m:"喝水",e:"🥤"},{w:"てをあらう",wi:1,m:"洗手",e:"🧼"}]},
- {k:"ん",r:"n",src:"无",w:"ぱん",wi:1,m:"麵包",e:"🍞",tipS:"讀音剛好就是 n。",tipI:"像英文小寫 n 的草寫。唯一不當字首的音。",sub:[{w:"うどん",wi:2,m:"烏龍麵",e:"🍜"},{w:"ほん",wi:1,m:"書",e:"📚"}]}
+ {k:"ん",r:"n",src:"无",w:"ぱん",wi:1,m:"麵包",e:"🍞",tipS:"讀音剛好就是 n。",tipI:"像英文小寫 n 的草寫。唯一不當字首的音。",sub:[{w:"うどん",wi:2,m:"烏龍麵",e:"🍜"},{w:"ほん",wi:1,m:"書",e:"📚"}]},
+ {k:"が",r:"ga",src:"か＋゛",w:"がっこう",wi:0,m:"學校",e:"🏫",tipS:"烏鴉「嘎（ga）」叫。",tipI:"か＋゛（兩點）＝が，聲音沉到喉嚨。",sub:[{w:"かがみ",wi:1,m:"鏡子",e:"🪞"},{w:"まんが",wi:2,m:"漫畫",e:"📕"}]},
+ {k:"ぎ",r:"gi",src:"き＋゛",w:"ぎんこう",wi:0,m:"銀行",e:"🏦",tipS:"門「嘰（gi）」一聲打開。",tipI:"き＋゛＝ぎ。",sub:[{w:"かぎ",wi:1,m:"鑰匙",e:"🔑"},{w:"うさぎ",wi:2,m:"兔子",e:"🐰"}]},
+ {k:"ぐ",r:"gu",src:"く＋゛",w:"ぐるぐる",wi:0,m:"轉圈圈",e:"🌀",tipS:"肚子餓得「咕（gu）」嚕叫。",tipI:"く＋゛＝ぐ。",sub:[{w:"かぐ",wi:1,m:"家具",e:"🛋️"},{w:"ふぐ",wi:1,m:"河豚",e:"🐡"}]},
+ {k:"げ",r:"ge",src:"け＋゛",w:"げんき",wi:0,m:"有精神",e:"💪",tipS:"「愕（ge）」然一驚。",tipI:"け＋゛＝げ。",sub:[{w:"ひげ",wi:1,m:"鬍子",e:"🧔"},{w:"げた",wi:0,m:"木屐",e:"🩴"}]},
+ {k:"ご",r:"go",src:"こ＋゛",w:"ごはん",wi:0,m:"飯",e:"🍚",tipS:"「go（go）！」出發！",tipI:"こ＋゛＝ご。",sub:[{w:"りんご",wi:2,m:"蘋果",e:"🍎"},{w:"たまご",wi:2,m:"雞蛋",e:"🥚"}]},
+ {k:"ざ",r:"za",src:"さ＋゛",w:"ざっし",wi:0,m:"雜誌",e:"📰",tipS:"大雨「唰（za）」地下。",tipI:"さ＋゛＝ざ。",sub:[{w:"ひざ",wi:1,m:"膝蓋",e:"🦵"},{w:"かざん",wi:1,m:"火山",e:"🌋"}]},
+ {k:"じ",r:"ji",src:"し＋゛",w:"じてんしゃ",wi:0,m:"腳踏車",e:"🚲",tipS:"「機（ji）」器嗡嗡轉。",tipI:"し＋゛＝じ。",sub:[{w:"じかん",wi:0,m:"時間",e:"⏰"},{w:"にじ",wi:1,m:"彩虹",e:"🌈"}]},
+ {k:"ず",r:"zu",src:"す＋゛",w:"ずぼん",wi:0,m:"褲子",e:"👖",tipS:"「滋（zu）」地一聲。",tipI:"す＋゛＝ず。",sub:[{w:"ちず",wi:1,m:"地圖",e:"🗺️"},{w:"みず",wi:1,m:"水",e:"💧"}]},
+ {k:"ぜ",r:"ze",src:"せ＋゛",w:"ぜんぶ",wi:0,m:"全部",e:"💯",tipS:"蜜蜂「嗞（ze）」振翅。",tipI:"せ＋゛＝ぜ。",sub:[{w:"かぜ",wi:1,m:"風",e:"🌬️"},{w:"ぜいたく",wi:0,m:"奢侈",e:"💎"}]},
+ {k:"ぞ",r:"zo",src:"そ＋゛",w:"ぞう",wi:0,m:"大象",e:"🐘",tipS:"大象就是ぞう（zō）！",tipI:"そ＋゛＝ぞ。",sub:[{w:"かぞく",wi:1,m:"家人",e:"👨‍👩‍👧"},{w:"れいぞうこ",wi:2,m:"冰箱",e:"🧊"}]},
+ {k:"だ",r:"da",src:"た＋゛",w:"だいがく",wi:0,m:"大學",e:"🎓",tipS:"「打（da）」一聲。",tipI:"た＋゛＝だ。",sub:[{w:"くだもの",wi:1,m:"水果",e:"🍇"},{w:"らくだ",wi:2,m:"駱駝",e:"🐫"}]},
+ {k:"ぢ",r:"ji [ぢ]",src:"ち＋゛",w:"はなぢ",wi:2,m:"流鼻血",e:"🩸",tipS:"和じ同音（ji），很少用。",tipI:"ち＋゛＝ぢ，多出現在連濁詞。",sub:[{w:"ちぢむ",wi:1,m:"縮小",e:"📏"}]},
+ {k:"づ",r:"zu [づ]",src:"つ＋゛",w:"つづき",wi:1,m:"續集",e:"▶️",tipS:"和ず同音（zu），很少用。",tipI:"つ＋゛＝づ，多出現在連濁詞。",sub:[{w:"こづつみ",wi:1,m:"包裹",e:"📦"}]},
+ {k:"で",r:"de",src:"て＋゛",w:"でんわ",wi:0,m:"電話",e:"📞",tipS:"「爹（de）」。",tipI:"て＋゛＝で。",sub:[{w:"でんしゃ",wi:0,m:"電車",e:"🚃"},{w:"おでん",wi:1,m:"關東煮",e:"🍢"}]},
+ {k:"ど",r:"do",src:"と＋゛",w:"どうぶつ",wi:0,m:"動物",e:"🦁",tipS:"敲門「咚（do）咚」。",tipI:"と＋゛＝ど。",sub:[{w:"まど",wi:1,m:"窗戶",e:"🪟"},{w:"こども",wi:1,m:"小孩",e:"🧒"}]},
+ {k:"ば",r:"ba",src:"は＋゛",w:"ばら",wi:0,m:"玫瑰",e:"🌹",tipS:"「爸（ba）」爸。",tipI:"は＋゛＝ば。",sub:[{w:"かばん",wi:1,m:"包包",e:"👜"},{w:"おばあさん",wi:1,m:"奶奶",e:"👵"}]},
+ {k:"び",r:"bi",src:"ひ＋゛",w:"びょういん",wi:0,m:"醫院",e:"🏥",tipS:"哨聲「嗶（bi）」。",tipI:"ひ＋゛＝び。",sub:[{w:"えび",wi:1,m:"蝦子",e:"🦐"},{w:"へび",wi:1,m:"蛇",e:"🐍"}]},
+ {k:"ぶ",r:"bu",src:"ふ＋゛",w:"ぶた",wi:0,m:"豬",e:"🐷",tipS:"豬「噗（bu）」——豬就是ぶた！",tipI:"ふ＋゛＝ぶ。",sub:[{w:"ぶどう",wi:0,m:"葡萄",e:"🍇"},{w:"しんぶん",wi:2,m:"報紙",e:"📰"}]},
+ {k:"べ",r:"be",src:"へ＋゛",w:"べんとう",wi:0,m:"便當",e:"🍱",tipS:"「唄（be）」。",tipI:"へ＋゛＝べ。",sub:[{w:"たべもの",wi:1,m:"食物",e:"🍽️"},{w:"なべ",wi:1,m:"火鍋",e:"🍲"}]},
+ {k:"ぼ",r:"bo",src:"ほ＋゛",w:"ぼうし",wi:0,m:"帽子",e:"🧢",tipS:"「寶（bo）」寶戴帽子。",tipI:"ほ＋゛＝ぼ。",sub:[{w:"ぼたん",wi:0,m:"鈕扣",e:"🔘"},{w:"たんぼ",wi:2,m:"稻田",e:"🌾"}]},
+ {k:"ぱ",r:"pa",src:"は＋゜",w:"ぱん",wi:0,m:"麵包",e:"🍞",tipS:"拍手「啪（pa）」。",tipI:"は＋゜（小圈）＝ぱ，半濁音是 p 的爆破聲。",sub:[{w:"ぱちぱち",wi:0,m:"拍手聲",e:"👏"},{w:"かんぱい",wi:2,m:"乾杯",e:"🍻"}]},
+ {k:"ぴ",r:"pi",src:"ひ＋゜",w:"ぴかぴか",wi:0,m:"亮晶晶",e:"✨",tipS:"哨子「嗶（pi）」——尖尖的 p 音。",tipI:"ひ＋゜＝ぴ。",sub:[{w:"えんぴつ",wi:2,m:"鉛筆",e:"✏️"}]},
+ {k:"ぷ",r:"pu",src:"ふ＋゜",w:"てんぷら",wi:2,m:"天婦羅",e:"🍤",tipS:"「噗（pu）」地噴出。",tipI:"ふ＋゜＝ぷ。",sub:[{w:"ぷかぷか",wi:0,m:"漂浮貌",e:"🎈"}]},
+ {k:"ぺ",r:"pe",src:"へ＋゜",w:"ぺこぺこ",wi:0,m:"肚子餓扁",e:"🍽️",tipS:"「呸（pe）」。",tipI:"へ＋゜＝ぺ。",sub:[{w:"ぺらぺら",wi:0,m:"口語流利",e:"🗣️"}]},
+ {k:"ぽ",r:"po",src:"ほ＋゜",w:"さんぽ",wi:2,m:"散步",e:"🚶",tipS:"水滴「啵（po）」。",tipI:"ほ＋゜＝ぽ。",sub:[{w:"たんぽぽ",wi:2,m:"蒲公英",e:"🌼"},{w:"しっぽ",wi:2,m:"尾巴",e:"🐕"}]}
 ];
 const IDX = {}; DATA.forEach((d,i)=>IDX[d.k]=i);
 const ROWS = [
@@ -414,9 +452,29 @@ const ROWS = [
  ["ま","み","む","め","も"],["や",null,"ゆ",null,"よ"],["ら","り","る","れ","ろ"],
  ["わ",null,null,null,"を"],["ん",null,null,null,null]
 ];
+const DAKU_ROWS = [
+ ["が","ぎ","ぐ","げ","ご"],["ざ","じ","ず","ぜ","ぞ"],["だ","ぢ","づ","で","ど"],
+ ["ば","び","ぶ","べ","ぼ"],["ぱ","ぴ","ぷ","ぺ","ぽ"]
+];
+const KATA = {
+ "あ":"ア","い":"イ","う":"ウ","え":"エ","お":"オ","か":"カ","き":"キ","く":"ク","け":"ケ","こ":"コ",
+ "さ":"サ","し":"シ","す":"ス","せ":"セ","そ":"ソ","た":"タ","ち":"チ","つ":"ツ","て":"テ","と":"ト",
+ "な":"ナ","に":"ニ","ぬ":"ヌ","ね":"ネ","の":"ノ","は":"ハ","ひ":"ヒ","ふ":"フ","へ":"ヘ","ほ":"ホ",
+ "ま":"マ","み":"ミ","む":"ム","め":"メ","も":"モ","や":"ヤ","ゆ":"ユ","よ":"ヨ",
+ "ら":"ラ","り":"リ","る":"ル","れ":"レ","ろ":"ロ","わ":"ワ","を":"ヲ","ん":"ン",
+ "が":"ガ","ぎ":"ギ","ぐ":"グ","げ":"ゲ","ご":"ゴ","ざ":"ザ","じ":"ジ","ず":"ズ","ぜ":"ゼ","ぞ":"ゾ",
+ "だ":"ダ","ぢ":"ヂ","づ":"ヅ","で":"デ","ど":"ド","ば":"バ","び":"ビ","ぶ":"ブ","べ":"ベ","ぼ":"ボ",
+ "ぱ":"パ","ぴ":"ピ","ぷ":"プ","ぺ":"ペ","ぽ":"ポ"
+};
+const HOMO = {"じ":["ぢ"],"ぢ":["じ"],"ず":["づ"],"づ":["ず"],"を":["お"],"お":["を"]};
 const CONFUSE = [
  ["ぬ","め","ね"],["わ","れ","ね"],["る","ろ"],["き","さ","ち"],["は","ほ","ま"],
- ["う","つ","ら"],["こ","に","た"],["し","も","と"],["す","む"],["あ","お"],["や","ゆ","よ"]
+ ["う","つ","ら"],["こ","に","た"],["し","も","と"],["す","む"],["あ","お"],["や","ゆ","よ"],
+ ["し","つ"],["そ","ん"],["う","ふ","わ"],["く","た"],
+ ["か","が"],["き","ぎ"],["く","ぐ"],["け","げ"],["こ","ご"],
+ ["さ","ざ"],["し","じ"],["す","ず"],["せ","ぜ"],["そ","ぞ"],
+ ["た","だ"],["ち","ぢ"],["つ","づ"],["て","で"],["と","ど"],
+ ["は","ば","ぱ"],["ひ","び","ぴ"],["ふ","ぶ","ぷ"],["へ","べ","ぺ"],["ほ","ぼ","ぽ"]
 ];
 
 /* ================= 學習紀錄 ================= */
@@ -482,9 +540,9 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
 });
 
 /* ================= 字卡 ================= */
-function renderKanaGrid(container, onTap){
+function renderKanaGrid(container, rows, onTap){
   container.innerHTML = "";
-  ROWS.forEach(row=>{
+  rows.forEach(row=>{
     row.forEach(k=>{
       const cell = document.createElement("button");
       cell.className = "kana-cell";
@@ -492,12 +550,16 @@ function renderKanaGrid(container, onTap){
       else{
         cell.classList.add("m"+"-"+mastery(k));
         const d = DATA[IDX[k]];
-        cell.innerHTML = `<div class="k kana-font">${k}</div><div class="r">${d.r}</div>`;
+        cell.innerHTML = `<div class="k kana-font">${k}<span class="kk">${KATA[k]}</span></div><div class="r">${d.r}</div>`;
         cell.addEventListener("click", ()=>onTap(IDX[k]));
       }
       container.appendChild(cell);
     });
   });
+}
+function renderCardGrids(){
+  renderKanaGrid(el("cardsGrid"), ROWS, openCard);
+  renderKanaGrid(el("cardsGridDaku"), DAKU_ROWS, openCard);
 }
 let cardIdx = 0;
 function openCard(i){
@@ -505,7 +567,8 @@ function openCard(i){
   const d = DATA[i];
   el("cKana").textContent = d.k;
   el("cRomaji").textContent = d.r;
-  el("cSrc").textContent = d.k + " ← 來自「" + d.src + "」";
+  el("cKata").textContent = KATA[d.k];
+  el("cSrc").textContent = d.src.includes("＋") ? d.k + " ＝ " + d.src : d.k + " ← 來自「" + d.src + "」";
   el("cEmoji").textContent = d.e;
   el("cWord").innerHTML = wordHTML(d,"hl");
   el("cMean").textContent = d.m;
@@ -514,7 +577,7 @@ function openCard(i){
     const chip = document.createElement("button");
     chip.className = "sub-chip kana-font";
     chip.innerHTML = "🔊 " + wordHTML(s,"hl") + `<span class="m">${s.m}${s.e ? " "+s.e : ""}</span>`;
-    chip.addEventListener("click", ()=>speak(s.w));
+    chip.addEventListener("click", (e)=>{ e.stopPropagation(); speak(s.w); });
     subs.appendChild(chip);
   });
   el("cTip").innerHTML = "<b>諧音</b>　" + d.tipS + "<br><b>圖像</b>　" + d.tipI;
@@ -524,13 +587,14 @@ function openCard(i){
 }
 el("cardClose").addEventListener("click", ()=>{
   el("cardOverlay").classList.add("hidden");
-  renderKanaGrid(el("cardsGrid"), openCard);
+  renderCardGrids();
 });
 el("cardPrev").addEventListener("click", ()=>openCard((cardIdx-1+DATA.length)%DATA.length));
 el("cardNext").addEventListener("click", ()=>openCard((cardIdx+1)%DATA.length));
-el("speakKana").addEventListener("click", ()=>speak(DATA[cardIdx].k));
-el("speakWord").addEventListener("click", ()=>speak(DATA[cardIdx].w));
-renderKanaGrid(el("cardsGrid"), openCard);
+el("cKana").addEventListener("click", ()=>speak(DATA[cardIdx].k));
+el("cKata").addEventListener("click", ()=>speak(DATA[cardIdx].k));
+el("cWordBlock").addEventListener("click", ()=>speak(DATA[cardIdx].w));
+renderCardGrids();
 
 /* ================= 測驗範圍 ================= */
 const RANGE_ROWS = [
@@ -543,14 +607,21 @@ const RANGE_ROWS = [
  {n:"ま行",ks:["ま","み","む","め","も"]},
  {n:"や行",ks:["や","ゆ","よ"]},
  {n:"ら行",ks:["ら","り","る","れ","ろ"]},
- {n:"わ・を・ん",ks:["わ","を","ん"]}
+ {n:"わ・を・ん",ks:["わ","を","ん"]},
+ {n:"が行",ks:["が","ぎ","ぐ","げ","ご"]},
+ {n:"ざ行",ks:["ざ","じ","ず","ぜ","ぞ"]},
+ {n:"だ行",ks:["だ","ぢ","づ","で","ど"]},
+ {n:"ば行",ks:["ば","び","ぶ","べ","ぼ"]},
+ {n:"ぱ行",ks:["ぱ","ぴ","ぷ","ぺ","ぽ"]}
 ];
+const SEION = ROWS.flat().filter(Boolean);
 let rangeSel = [];
 try{ rangeSel = JSON.parse(localStorage.getItem("kana50range") || "[]") }catch(e){ rangeSel = [] }
 function rangeKanas(){
   if(!rangeSel.length) return DATA.map(d=>d.k);
   const out = [];
-  RANGE_ROWS.forEach(r=>{ if(rangeSel.includes(r.n)) out.push(...r.ks) });
+  if(rangeSel.includes("清音")) out.push(...SEION);
+  RANGE_ROWS.forEach(r=>{ if(rangeSel.includes(r.n)) r.ks.forEach(k=>{ if(!out.includes(k)) out.push(k) }) });
   return out.length ? out : DATA.map(d=>d.k);
 }
 function saveRange(){
@@ -565,6 +636,15 @@ function renderRange(){
   all.textContent = "全部";
   all.addEventListener("click", ()=>{ rangeSel = []; saveRange(); });
   box.appendChild(all);
+  const seion = document.createElement("button");
+  seion.className = "range-chip" + (rangeSel.includes("清音") ? " on" : "");
+  seion.textContent = "清音全部";
+  seion.addEventListener("click", ()=>{
+    if(rangeSel.includes("清音")) rangeSel = rangeSel.filter(x=>x!=="清音");
+    else rangeSel.push("清音");
+    saveRange();
+  });
+  box.appendChild(seion);
   RANGE_ROWS.forEach(r=>{
     const b = document.createElement("button");
     b.className = "range-chip" + (rangeSel.includes(r.n) ? " on" : "");
@@ -606,14 +686,15 @@ function pickTargets(mode, n){
   }
   return picked;
 }
-function distractors(k, n){
-  const range = rangeKanas().filter(x=>x!==k);
+function distractors(k, n, exclude){
+  const ex = exclude || [];
+  const range = rangeKanas().filter(x=>x!==k && !ex.includes(x));
   const conf = new Set();
   CONFUSE.forEach(g=>{ if(g.includes(k)) g.forEach(x=>{ if(x!==k) conf.add(x) }) });
   const inRangeConf = shuffle(range.filter(x=>conf.has(x)));
   const inRangeRest = shuffle(range.filter(x=>!conf.has(x)));
-  const outConf = shuffle([...conf].filter(x=>!range.includes(x)));
-  const outRest = shuffle(DATA.map(d=>d.k).filter(x=>x!==k && !range.includes(x) && !conf.has(x)));
+  const outConf = shuffle([...conf].filter(x=>!range.includes(x) && !ex.includes(x)));
+  const outRest = shuffle(DATA.map(d=>d.k).filter(x=>x!==k && !range.includes(x) && !conf.has(x) && !ex.includes(x)));
   const out = [], seen = new Set();
   [...inRangeConf, ...inRangeRest, ...outConf, ...outRest].forEach(x=>{
     if(!seen.has(x) && out.length<n){ seen.add(x); out.push(x); }
@@ -635,7 +716,7 @@ function showQuestion(){
   const k = quiz.targets[quiz.i];
   const d = DATA[IDX[k]];
   quiz.answered = false;
-  const qtype = quiz.mode==="weak" ? ["read","listen","word"][Math.floor(Math.random()*3)] : quiz.mode;
+  const qtype = quiz.mode==="weak" ? ["read","listen","word","kata"][Math.floor(Math.random()*4)] : quiz.mode;
   quiz.qtype = qtype;
   el("quizProgress").textContent = (quiz.i+1) + " / " + QUIZ_LEN;
   el("qFeedback").textContent = ""; el("qFeedback").className = "feedback";
@@ -643,26 +724,32 @@ function showQuestion(){
   el("qNext").classList.add("hidden");
   const qc = el("qCard"), ag = el("ansGrid");
   ag.innerHTML = "";
-  let choices, field;
+  let labelFor = x=>x, isRomaji = false;
   if(qtype==="read"){
     qc.innerHTML = `<div class="q-label">這個假名怎麼唸？</div><div class="q-kana kana-font">${d.k}</div>`;
-    field = "r";
+    labelFor = x=>DATA[IDX[x]].r; isRomaji = true;
   }else if(qtype==="listen"){
     qc.innerHTML = `<div class="q-label">聽發音，選出正確的假名</div><button class="play-big" id="qPlay">🔊 播放</button>`;
-    field = "k";
     setTimeout(()=>speak(d.k), 250);
     qc.querySelector("#qPlay").addEventListener("click", ()=>speak(d.k));
+  }else if(qtype==="kata"){
+    if(Math.random() < 0.5){
+      qc.innerHTML = `<div class="q-label">這個片假名的平假名是？</div><div class="q-kana kana-font">${KATA[d.k]}</div>`;
+    }else{
+      qc.innerHTML = `<div class="q-label">「${d.k}」的片假名是？</div><div class="q-kana kana-font">${d.k}</div>`;
+      labelFor = x=>KATA[x];
+    }
   }else{
     const blanked = d.w.split("").map((ch,i)=> i===d.wi ? '<span class="blank">◯</span>' : ch).join("");
     qc.innerHTML = `<div class="q-label">◯ 是哪個假名？</div><div class="q-emoji">${d.e}</div><div class="q-word kana-font">${blanked}</div><div class="q-mean">${d.m}</div>`;
-    field = "k";
   }
-  const opts = shuffle([k, ...distractors(k,3)]);
+  const exclude = qtype==="listen" ? (HOMO[k] || []) : [];
+  const opts = shuffle([k, ...distractors(k, 3, exclude)]);
   opts.forEach(ok=>{
-    const od = DATA[IDX[ok]];
     const btn = document.createElement("button");
-    btn.className = "ans-btn" + (field==="r" ? " romaji-ans" : " kana-font");
-    btn.textContent = field==="r" ? od.r : od.k;
+    btn.className = "ans-btn" + (isRomaji ? " romaji-ans" : " kana-font");
+    btn.textContent = labelFor(ok);
+    btn.dataset.kana = ok;
     btn.addEventListener("click", ()=>answer(btn, ok===k, k, ag));
     el("ansGrid").appendChild(btn);
   });
@@ -672,9 +759,8 @@ function answer(btn, ok, k, grid){
   quiz.answered = true;
   record(k, ok);
   const d = DATA[IDX[k]];
-  const correctText = quiz.qtype==="read" ? d.r : d.k;
   grid.querySelectorAll(".ans-btn").forEach(b=>{
-    if(b.textContent===correctText) b.classList.add("correct");
+    if(b.dataset.kana===k) b.classList.add("correct");
     else if(b===btn) b.classList.add("wrong");
     else b.classList.add("dim");
   });
@@ -687,7 +773,7 @@ function answer(btn, ok, k, grid){
   }
   const rev = el("qReview");
   rev.innerHTML =
-    `<div class="mc-head"><span class="mc-kana kana-font">${d.k}</span><span class="mc-r">${d.r}</span>` +
+    `<div class="mc-head"><span class="mc-kana kana-font">${d.k}</span><span class="mc-r">${d.r}・${KATA[d.k]}</span>` +
     `<span class="mc-word kana-font">${wordHTML(d,"hl")} ${d.e}<span class="mc-mean">${d.m}</span></span></div>` +
     `<div class="mc-tips"><b>諧音</b>　${d.tipS}<br><b>圖像</b>　${d.tipI}</div>` +
     `<div class="mc-open">點一下打開完整字卡 →</div>`;
@@ -722,7 +808,17 @@ el("resBack").addEventListener("click", ()=>{
 });
 
 /* ================= 配對翻牌 ================= */
-let gameStarted = false, gOpen = [], gMoves = 0, gMatched = 0, gLock = false;
+let gameStarted = false, gOpen = [], gMoves = 0, gMatched = 0, gLock = false, gameMode = "sound";
+el("gmSound").addEventListener("click", ()=>{
+  gameMode = "sound";
+  el("gmSound").classList.add("on"); el("gmKata").classList.remove("on");
+  startGame();
+});
+el("gmKata").addEventListener("click", ()=>{
+  gameMode = "kata";
+  el("gmKata").classList.add("on"); el("gmSound").classList.remove("on");
+  startGame();
+});
 function startGame(){
   gameStarted = true; gOpen = []; gMoves = 0; gMatched = 0; gLock = false;
   el("gameMoves").textContent = "翻牌 0 次";
@@ -736,7 +832,8 @@ function startGame(){
   picks.forEach(k=>{
     const d = DATA[IDX[k]];
     cards.push({pair:k, text:d.k, kana:true});
-    cards.push({pair:k, text:d.r, kana:false});
+    if(gameMode==="kata") cards.push({pair:k, text:KATA[k], kana:true});
+    else cards.push({pair:k, text:d.r, kana:false});
   });
   shuffle(cards);
   const g = el("gameGrid"); g.innerHTML = "";
@@ -788,7 +885,8 @@ function renderProgress(){
   el("stMid").textContent = counts.mid;
   el("stWeak").textContent = counts.weak;
   el("stNew").textContent = counts.new;
-  renderKanaGrid(el("progGrid"), openCard);
+  renderKanaGrid(el("progGrid"), ROWS, openCard);
+  renderKanaGrid(el("progGridDaku"), DAKU_ROWS, openCard);
 }
 el("resetBtn").addEventListener("click", ()=>{
   if(confirm("確定要清除所有學習紀錄嗎？")){
