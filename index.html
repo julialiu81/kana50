@@ -259,7 +259,11 @@
 
   <!-- 字卡 -->
   <section id="view-cards">
-    <p class="section-note">點任一個假名打開字卡（小字是對應的片假名）。格子下緣的顏色是熟練度（綠＝熟、黃＝學習中、紅＝不熟）。</p>
+    <div class="range-chips" style="margin-bottom:10px">
+      <button class="range-chip on" id="scHira">平假名</button>
+      <button class="range-chip" id="scKata">片假名</button>
+    </div>
+    <p class="section-note">點任一個假名打開字卡（小字是另一種寫法）。格子下緣的顏色是熟練度（綠＝熟、黃＝學習中、紅＝不熟）。</p>
     <div class="kana-grid" id="cardsGrid"></div>
     <div class="grid-label">濁音・半濁音</div>
     <div class="kana-grid" id="cardsGridDaku"></div>
@@ -344,7 +348,7 @@
     <div class="flashcard">
       <div class="big-kana kana-font" id="cKana"></div>
       <div class="romaji" id="cRomaji"></div>
-      <div class="kata-line">片假名<span class="kata-big kana-font" id="cKata"></span></div>
+      <div class="kata-line"><span id="cAltLabel">片假名</span><span class="kata-big kana-font" id="cKata"></span></div>
       <div><span class="src-chip" id="cSrc"></span></div>
       <div class="word-block" id="cWordBlock">
         <div class="emoji" id="cEmoji"></div>
@@ -467,6 +471,80 @@ const KATA = {
  "ぱ":"パ","ぴ":"ピ","ぷ":"プ","ぺ":"ペ","ぽ":"ポ"
 };
 const HOMO = {"じ":["ぢ"],"ぢ":["じ"],"ず":["づ"],"づ":["ず"],"を":["お"],"お":["を"]};
+/* 片假名專屬字卡資料（濁音的字源與圖像口訣由清音自動推導） */
+const KCARD = {
+ "あ":{src:"阿",tip:"像屋頂上的天線（antenna，a）。",w:"アイス",wi:0,m:"冰淇淋",e:"🍦"},
+ "い":{src:"伊",tip:"「伊」的單人旁，站得直直的，唸 i。",w:"イヤホン",wi:0,m:"耳機",e:"🎧"},
+ "う":{src:"宇",tip:"和う同源：宇（u）的屋頂，頭上一點。",w:"ウクレレ",wi:0,m:"烏克麗麗",e:"🪕"},
+ "え":{src:"江",tip:"就是「工」字——engineer（e）的工。",w:"エレベーター",wi:0,m:"電梯",e:"🛗"},
+ "お":{src:"於",tip:"像「才」字——「哦（o）！真有才！」",w:"オレンジ",wi:0,m:"柳橙",e:"🍊"},
+ "か":{src:"加",tip:"就是「力」，也是か的右半，唸 ka。",w:"カメラ",wi:0,m:"相機",e:"📷"},
+ "き":{src:"幾",tip:"き的上半——鑰匙（key，ki）只露出一半。",w:"キウイ",wi:0,m:"奇異果",e:"🥝"},
+ "く":{src:"久",tip:"鳥嘴的側面，和く同一張嘴「咕（ku）」。",w:"クレヨン",wi:0,m:"蠟筆",e:"🖍️"},
+ "け":{src:"介",tip:"「介」字缺了右腳，唸 ke。",w:"ケーキ",wi:0,m:"蛋糕",e:"🍰"},
+ "こ":{src:"己",tip:"像「口（ko）」字缺了一邊。",w:"コーヒー",wi:0,m:"咖啡",e:"☕"},
+ "さ":{src:"散",tip:"像草字頭「艹」——草（くさ）的サ（sa）。",w:"サッカー",wi:0,m:"足球",e:"⚽"},
+ "し":{src:"之",tip:"三點由下往上撇的笑臉（shi）。和ツ相反：シ的點橫著排。",w:"シャツ",wi:0,m:"襯衫",e:"👕"},
+ "す":{src:"須",tip:"像溜滑梯「咻（su）」地滑下來。",w:"スプーン",wi:0,m:"湯匙",e:"🥄"},
+ "せ":{src:"世",tip:"和せ同源：「世（se）」字寫快了。",w:"セーター",wi:0,m:"毛衣",e:"🧶"},
+ "そ":{src:"曾",tip:"一點一撇「唆（so）」。和ン相反：ソ由上往下寫。",w:"ソファ",wi:0,m:"沙發",e:"🛋️"},
+ "た":{src:"多",tip:"像「夕」陽——「多（ta）」字的一半。",w:"タクシー",wi:0,m:"計程車",e:"🚕"},
+ "ち":{src:"千",tip:"就是「千」——中文的千唸起來像 chi。",w:"チーズ",wi:0,m:"起司",e:"🧀"},
+ "つ":{src:"川",tip:"濺起的水花（tsunami，tsu）。和シ相反：ツ的點直著排、由上往下撇。",w:"ツリー",wi:0,m:"聖誕樹",e:"🎄"},
+ "て":{src:"天",tip:"「天」少一撇，唸 te。",w:"テレビ",wi:0,m:"電視",e:"📺"},
+ "と":{src:"止",tip:"像柱子上釘了根釘——腳趾（toe，to）又踢到了。",w:"トマト",wi:0,m:"番茄",e:"🍅"},
+ "な":{src:"奈",tip:"「奈」的上半：十字加一撇，拿（na）著。",w:"ナイフ",wi:0,m:"刀子",e:"🔪"},
+ "に":{src:"二",tip:"就是「二」——日文的二唸 ni！",w:"ニュース",wi:0,m:"新聞",e:"🗞️"},
+ "ぬ":{src:"奴",tip:"「又」多一撇，像交叉的筷子夾麵（noodle，nu）。",w:"ヌードル",wi:0,m:"麵",e:"🍜"},
+ "ね":{src:"祢",tip:"示字旁「礻」——ね的兄弟，一樣是貓（ne）。",w:"ネクタイ",wi:0,m:"領帶",e:"👔"},
+ "の":{src:"乃",tip:"只剩一撇——NO（no）到只剩一筆。",w:"ノート",wi:0,m:"筆記本",e:"📓"},
+ "は":{src:"八",tip:"就是「八」——張嘴「哈（ha）」笑成八字。",w:"ハンバーガー",wi:0,m:"漢堡",e:"🍔"},
+ "ひ":{src:"比",tip:"像「匕」首，「嘻（hi）」地一閃。",w:"ヒーロー",wi:0,m:"英雄",e:"🦸"},
+ "ふ":{src:"不",tip:"像單邊屋簷，風「呼（fu）」地吹過。",w:"フォーク",wi:0,m:"叉子",e:"🍴"},
+ "へ":{src:"部",tip:"和へ幾乎一樣——同一座山坡「嘿（he）」。",w:"ヘリコプター",wi:0,m:"直升機",e:"🚁"},
+ "ほ":{src:"保",tip:"像「木」加兩點——保（ho）字的右下。",w:"ホテル",wi:0,m:"飯店",e:"🏨"},
+ "ま":{src:"万",tip:"像倒過來的 7——媽（ma）媽打的勾。",w:"マスク",wi:0,m:"口罩",e:"😷"},
+ "み":{src:"三",tip:"三條線——日文的三就唸 mi！",w:"ミルク",wi:0,m:"牛奶",e:"🥛"},
+ "む":{src:"牟",tip:"就是「厶」——「牟（mu）」，牛叫聲。",w:"ムービー",wi:0,m:"電影",e:"🎬"},
+ "め":{src:"女",tip:"像打了個大叉——「沒（me）有」！",w:"メロン",wi:0,m:"哈密瓜",e:"🍈"},
+ "も":{src:"毛",tip:"和も一樣是「毛（mo）」，少了起筆。",w:"モンスター",wi:0,m:"怪獸",e:"👾"},
+ "や":{src:"也",tip:"和や同款：「也（ya）」。",w:"タイヤ",wi:2,m:"輪胎",e:"🛞"},
+ "ゆ":{src:"由",tip:"像一缸泡湯的浴池——泡湯（ゆ，yu）。",w:"ユニフォーム",wi:0,m:"制服",e:"🎽"},
+ "よ":{src:"与",tip:"像只有三根齒的梳子，「唷（yo）」。",w:"ヨーヨー",wi:0,m:"溜溜球",e:"🪀"},
+ "ら":{src:"良",tip:"フ加一橫，「啦（ra）」。",w:"ラジオ",wi:0,m:"收音機",e:"📻"},
+ "り":{src:"利",tip:"和り幾乎一樣——「利（ri）」的刂。",w:"リボン",wi:0,m:"緞帶",e:"🎀"},
+ "る":{src:"流",tip:"像跑步的雙腿（run，ru）。",w:"ルビー",wi:0,m:"紅寶石",e:"💎"},
+ "れ":{src:"礼",tip:"一筆勾起——敬礼（re）的那個勾。",w:"レモン",wi:0,m:"檸檬",e:"🍋"},
+ "ろ":{src:"呂",tip:"四四方方的「口」——「呂（ro）」的一半。",w:"ロボット",wi:0,m:"機器人",e:"🤖"},
+ "わ":{src:"和",tip:"像倒扣的碗——碗（wan，wa）。",w:"ワイン",wi:0,m:"紅酒",e:"🍷"},
+ "を":{src:"乎",tip:"フ加一橫。和を一樣只當助詞（o）。",w:"ヲタク",wi:0,m:"御宅族（俗寫）",e:"🤓"},
+ "ん":{src:"尓",tip:"一點一勾由下往上——ん的親戚（n）。和ソ相反。",w:"ペン",wi:1,m:"筆",e:"🖊️"},
+ "が":{w:"ガム",wi:0,m:"口香糖",e:"🍬"},
+ "ぎ":{w:"ギター",wi:0,m:"吉他",e:"🎸"},
+ "ぐ":{w:"グローブ",wi:0,m:"手套",e:"🧤"},
+ "げ":{w:"ゲーム",wi:0,m:"電玩",e:"🎮"},
+ "ご":{w:"ゴリラ",wi:0,m:"大猩猩",e:"🦍"},
+ "ざ":{w:"ピザ",wi:1,m:"披薩",e:"🍕"},
+ "じ":{w:"ジュース",wi:0,m:"果汁",e:"🧃"},
+ "ず":{w:"ズッキーニ",wi:0,m:"櫛瓜",e:"🥒"},
+ "ぜ":{w:"ゼリー",wi:0,m:"果凍",e:"🍮"},
+ "ぞ":{w:"ゾンビ",wi:0,m:"殭屍",e:"🧟"},
+ "だ":{w:"ダンス",wi:0,m:"跳舞",e:"💃"},
+ "ぢ":{w:"チヂミ",wi:1,m:"韓式煎餅",e:"🥞"},
+ "づ":{w:"ヅケ",wi:0,m:"醃漬鮪魚",e:"🍣"},
+ "で":{w:"デパート",wi:0,m:"百貨公司",e:"🏬"},
+ "ど":{w:"ドーナツ",wi:0,m:"甜甜圈",e:"🍩"},
+ "ば":{w:"バス",wi:0,m:"公車",e:"🚌"},
+ "び":{w:"ビール",wi:0,m:"啤酒",e:"🍺"},
+ "ぶ":{w:"ブーツ",wi:0,m:"靴子",e:"👢"},
+ "べ":{w:"ベッド",wi:0,m:"床",e:"🛏️"},
+ "ぼ":{w:"ボート",wi:0,m:"小船",e:"🚤"},
+ "ぱ":{w:"パンダ",wi:0,m:"熊貓",e:"🐼"},
+ "ぴ":{w:"ピアノ",wi:0,m:"鋼琴",e:"🎹"},
+ "ぷ":{w:"プール",wi:0,m:"游泳池",e:"🏊"},
+ "ぺ":{w:"ペンギン",wi:0,m:"企鵝",e:"🐧"},
+ "ぽ":{w:"ポテト",wi:0,m:"薯條",e:"🍟"}
+};
 const CONFUSE = [
  ["ぬ","め","ね"],["わ","れ","ね"],["る","ろ"],["き","さ","ち"],["は","ほ","ま"],
  ["う","つ","ら"],["こ","に","た"],["し","も","と"],["す","む"],["あ","お"],["や","ゆ","よ"],
@@ -540,7 +618,8 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
 });
 
 /* ================= 字卡 ================= */
-function renderKanaGrid(container, rows, onTap){
+let cardScript = "hira";
+function renderKanaGrid(container, rows, onTap, script){
   container.innerHTML = "";
   rows.forEach(row=>{
     row.forEach(k=>{
@@ -550,7 +629,9 @@ function renderKanaGrid(container, rows, onTap){
       else{
         cell.classList.add("m"+"-"+mastery(k));
         const d = DATA[IDX[k]];
-        cell.innerHTML = `<div class="k kana-font">${k}<span class="kk">${KATA[k]}</span></div><div class="r">${d.r}</div>`;
+        const main = script==="kata" ? KATA[k] : k;
+        const small = script==="kata" ? k : KATA[k];
+        cell.innerHTML = `<div class="k kana-font">${main}<span class="kk">${small}</span></div><div class="r">${d.r}</div>`;
         cell.addEventListener("click", ()=>onTap(IDX[k]));
       }
       container.appendChild(cell);
@@ -558,29 +639,60 @@ function renderKanaGrid(container, rows, onTap){
   });
 }
 function renderCardGrids(){
-  renderKanaGrid(el("cardsGrid"), ROWS, openCard);
-  renderKanaGrid(el("cardsGridDaku"), DAKU_ROWS, openCard);
+  renderKanaGrid(el("cardsGrid"), ROWS, openCard, cardScript);
+  renderKanaGrid(el("cardsGridDaku"), DAKU_ROWS, openCard, cardScript);
+}
+el("scHira").addEventListener("click", ()=>{
+  cardScript = "hira";
+  el("scHira").classList.add("on"); el("scKata").classList.remove("on");
+  renderCardGrids();
+});
+el("scKata").addEventListener("click", ()=>{
+  cardScript = "kata";
+  el("scKata").classList.add("on"); el("scHira").classList.remove("on");
+  renderCardGrids();
+});
+function kataSrcText(d){
+  return d.src.includes("＋") ? KATA[d.src[0]] + d.src.slice(1) : KCARD[d.k].src;
+}
+function kataTipText(d){
+  return d.src.includes("＋")
+    ? KATA[d.src[0]] + d.src.slice(1) + "＝" + KATA[d.k] + "。"
+    : KCARD[d.k].tip;
 }
 let cardIdx = 0;
 function openCard(i){
   cardIdx = i;
   const d = DATA[i];
-  el("cKana").textContent = d.k;
+  const kc = KCARD[d.k];
+  const kata = cardScript === "kata";
+  el("cKana").textContent = kata ? KATA[d.k] : d.k;
   el("cRomaji").textContent = d.r;
-  el("cKata").textContent = KATA[d.k];
-  el("cSrc").textContent = d.src.includes("＋") ? d.k + " ＝ " + d.src : d.k + " ← 來自「" + d.src + "」";
-  el("cEmoji").textContent = d.e;
-  el("cWord").innerHTML = wordHTML(d,"hl");
-  el("cMean").textContent = d.m;
+  el("cAltLabel").textContent = kata ? "平假名" : "片假名";
+  el("cKata").textContent = kata ? d.k : KATA[d.k];
   const subs = el("cSubs"); subs.innerHTML = "";
-  d.sub.forEach(s=>{
-    const chip = document.createElement("button");
-    chip.className = "sub-chip kana-font";
-    chip.innerHTML = "🔊 " + wordHTML(s,"hl") + `<span class="m">${s.m}${s.e ? " "+s.e : ""}</span>`;
-    chip.addEventListener("click", (e)=>{ e.stopPropagation(); speak(s.w); });
-    subs.appendChild(chip);
-  });
-  el("cTip").innerHTML = "<b>諧音</b>　" + d.tipS + "<br><b>圖像</b>　" + d.tipI;
+  if(kata){
+    el("cSrc").textContent = d.src.includes("＋")
+      ? KATA[d.k] + " ＝ " + kataSrcText(d)
+      : KATA[d.k] + " ← 來自「" + kc.src + "」";
+    el("cEmoji").textContent = kc.e;
+    el("cWord").innerHTML = wordHTML({w:kc.w, wi:kc.wi},"hl");
+    el("cMean").textContent = kc.m;
+    el("cTip").innerHTML = "<b>諧音</b>　" + d.tipS + "<br><b>圖像</b>　" + kataTipText(d);
+  }else{
+    el("cSrc").textContent = d.src.includes("＋") ? d.k + " ＝ " + d.src : d.k + " ← 來自「" + d.src + "」";
+    el("cEmoji").textContent = d.e;
+    el("cWord").innerHTML = wordHTML(d,"hl");
+    el("cMean").textContent = d.m;
+    d.sub.forEach(s=>{
+      const chip = document.createElement("button");
+      chip.className = "sub-chip kana-font";
+      chip.innerHTML = "🔊 " + wordHTML(s,"hl") + `<span class="m">${s.m}${s.e ? " "+s.e : ""}</span>`;
+      chip.addEventListener("click", (e)=>{ e.stopPropagation(); speak(s.w); });
+      subs.appendChild(chip);
+    });
+    el("cTip").innerHTML = "<b>諧音</b>　" + d.tipS + "<br><b>圖像</b>　" + d.tipI;
+  }
   el("cardPos").textContent = (i+1) + " / " + DATA.length;
   el("cardOverlay").classList.remove("hidden");
   speak(d.k);
@@ -593,7 +705,10 @@ el("cardPrev").addEventListener("click", ()=>openCard((cardIdx-1+DATA.length)%DA
 el("cardNext").addEventListener("click", ()=>openCard((cardIdx+1)%DATA.length));
 el("cKana").addEventListener("click", ()=>speak(DATA[cardIdx].k));
 el("cKata").addEventListener("click", ()=>speak(DATA[cardIdx].k));
-el("cWordBlock").addEventListener("click", ()=>speak(DATA[cardIdx].w));
+el("cWordBlock").addEventListener("click", ()=>{
+  const d = DATA[cardIdx];
+  speak(cardScript==="kata" ? KCARD[d.k].w : d.w);
+});
 renderCardGrids();
 
 /* ================= 測驗範圍 ================= */
