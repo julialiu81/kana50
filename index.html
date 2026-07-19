@@ -274,6 +274,13 @@
     <div id="quizMenu" class="mode-list">
       <p class="section-note">先選測驗範圍（建議一次 1～2 行、5～10 個音），小範圍熟了再挑戰全部。每回合 10 題，答錯會自動記錄。</p>
       <div class="range-box">
+        <div class="rt">測驗文字</div>
+        <div class="range-chips">
+          <button class="range-chip on" id="qsHira">平假名</button>
+          <button class="range-chip" id="qsKata">片假名</button>
+        </div>
+      </div>
+      <div class="range-box">
         <div class="rt">測驗範圍<span class="cnt" id="rangeCount"></span></div>
         <div class="range-chips" id="rangeChips"></div>
       </div>
@@ -319,6 +326,10 @@
 
   <!-- 進度 -->
   <section id="view-progress" class="hidden">
+    <div class="range-chips" style="margin-bottom:10px">
+      <button class="range-chip on" id="pgHira">平假名</button>
+      <button class="range-chip" id="pgKata">片假名</button>
+    </div>
     <div class="stat-row">
       <div class="stat-box"><div class="v" id="stGood">0</div><div class="l">已熟練</div></div>
       <div class="stat-box"><div class="v" id="stMid">0</div><div class="l">學習中</div></div>
@@ -545,6 +556,80 @@ const KCARD = {
  "ぺ":{w:"ペンギン",wi:0,m:"企鵝",e:"🐧"},
  "ぽ":{w:"ポテト",wi:0,m:"薯條",e:"🍟"}
 };
+/* 片假名次要例詞（一主二副的「二副」） */
+const KSUB = {
+ "あ":[{w:"アリ",wi:0,m:"螞蟻",e:"🐜"},{w:"アメリカ",wi:0,m:"美國",e:"🇺🇸"}],
+ "い":[{w:"インク",wi:0,m:"墨水",e:"🖋️"},{w:"イタリア",wi:0,m:"義大利",e:"🇮🇹"}],
+ "う":[{w:"ウール",wi:0,m:"羊毛",e:"🧶"},{w:"ウイルス",wi:0,m:"病毒",e:"🦠"}],
+ "え":[{w:"エプロン",wi:0,m:"圍裙",e:"🧑‍🍳"},{w:"エアコン",wi:0,m:"冷氣",e:"❄️"}],
+ "お":[{w:"オムレツ",wi:0,m:"歐姆蛋",e:"🍳"},{w:"オートバイ",wi:0,m:"摩托車",e:"🏍️"}],
+ "か":[{w:"カレー",wi:0,m:"咖哩",e:"🍛"},{w:"カード",wi:0,m:"卡片",e:"💳"}],
+ "き":[{w:"キング",wi:0,m:"國王",e:"👑"},{w:"キャンプ",wi:0,m:"露營",e:"⛺"}],
+ "く":[{w:"クッキー",wi:0,m:"餅乾",e:"🍪"},{w:"クイズ",wi:0,m:"猜謎",e:"❓"}],
+ "け":[{w:"ケチャップ",wi:0,m:"番茄醬",e:"🥫"},{w:"ロケット",wi:1,m:"火箭",e:"🚀"}],
+ "こ":[{w:"コアラ",wi:0,m:"無尾熊",e:"🐨"},{w:"コート",wi:0,m:"大衣",e:"🧥"}],
+ "さ":[{w:"サラダ",wi:0,m:"沙拉",e:"🥗"},{w:"サンドイッチ",wi:0,m:"三明治",e:"🥪"}],
+ "し":[{w:"シール",wi:0,m:"貼紙",e:"🏷️"},{w:"タクシー",wi:2,m:"計程車",e:"🚕"}],
+ "す":[{w:"スープ",wi:0,m:"湯",e:"🥣"},{w:"スキー",wi:0,m:"滑雪",e:"⛷️"}],
+ "せ":[{w:"セロリ",wi:0,m:"芹菜",e:"🥬"},{w:"セール",wi:0,m:"特賣",e:"💸"}],
+ "そ":[{w:"ソーセージ",wi:0,m:"香腸",e:"🌭"},{w:"ソーダ",wi:0,m:"汽水",e:"🥤"}],
+ "た":[{w:"タオル",wi:0,m:"毛巾",e:"🧖"},{w:"タワー",wi:0,m:"高塔",e:"🗼"}],
+ "ち":[{w:"チョコ",wi:0,m:"巧克力",e:"🍫"},{w:"チキン",wi:0,m:"雞肉",e:"🍗"}],
+ "つ":[{w:"ツアー",wi:0,m:"旅行團",e:"🧳"},{w:"スーツ",wi:2,m:"西裝",e:"🤵"}],
+ "て":[{w:"テスト",wi:0,m:"考試",e:"📝"},{w:"テント",wi:0,m:"帳篷",e:"⛺"}],
+ "と":[{w:"トラック",wi:0,m:"卡車",e:"🚚"},{w:"トースト",wi:0,m:"吐司",e:"🍞"}],
+ "な":[{w:"ナース",wi:0,m:"護理師",e:"👩‍⚕️"},{w:"バナナ",wi:1,m:"香蕉",e:"🍌"}],
+ "に":[{w:"ニンジン",wi:0,m:"紅蘿蔔",e:"🥕"},{w:"テニス",wi:1,m:"網球",e:"🎾"}],
+ "ぬ":[{w:"カヌー",wi:1,m:"獨木舟",e:"🛶"},{w:"ヌガー",wi:0,m:"牛軋糖",e:"🍬"}],
+ "ね":[{w:"ネット",wi:0,m:"網路",e:"🌐"},{w:"ネックレス",wi:0,m:"項鍊",e:"📿"}],
+ "の":[{w:"ノック",wi:0,m:"敲門",e:"🚪"},{w:"ピアノ",wi:2,m:"鋼琴",e:"🎹"}],
+ "は":[{w:"ハム",wi:0,m:"火腿",e:"🥓"},{w:"ハート",wi:0,m:"愛心",e:"❤️"}],
+ "ひ":[{w:"ヒント",wi:0,m:"提示",e:"💡"},{w:"コーヒー",wi:2,m:"咖啡",e:"☕"}],
+ "ふ":[{w:"フライパン",wi:0,m:"平底鍋",e:"🍳"},{w:"フルーツ",wi:0,m:"水果",e:"🍓"}],
+ "へ":[{w:"ヘルメット",wi:0,m:"安全帽",e:"⛑️"},{w:"ヘアピン",wi:0,m:"髮夾",e:"🎀"}],
+ "ほ":[{w:"ホットドッグ",wi:0,m:"熱狗",e:"🌭"},{w:"ホース",wi:0,m:"水管",e:"🚿"}],
+ "ま":[{w:"マイク",wi:0,m:"麥克風",e:"🎤"},{w:"トマト",wi:1,m:"番茄",e:"🍅"}],
+ "み":[{w:"ミント",wi:0,m:"薄荷",e:"🌿"},{w:"ミシン",wi:0,m:"縫紉機",e:"🧵"}],
+ "む":[{w:"ジャム",wi:2,m:"果醬",e:"🍯"},{w:"ゲーム",wi:2,m:"電玩",e:"🎮"}],
+ "め":[{w:"メール",wi:0,m:"郵件",e:"📧"},{w:"メダル",wi:0,m:"獎牌",e:"🏅"}],
+ "も":[{w:"メモ",wi:1,m:"便條",e:"📝"},{w:"リモコン",wi:1,m:"遙控器",e:"📺"}],
+ "や":[{w:"イヤリング",wi:1,m:"耳環",e:"💎"},{w:"ダイヤ",wi:2,m:"鑽石",e:"💍"}],
+ "ゆ":[{w:"ユーモア",wi:0,m:"幽默",e:"😄"},{w:"ユニコーン",wi:0,m:"獨角獸",e:"🦄"}],
+ "よ":[{w:"ヨット",wi:0,m:"帆船",e:"⛵"},{w:"ヨガ",wi:0,m:"瑜伽",e:"🧘"}],
+ "ら":[{w:"ライオン",wi:0,m:"獅子",e:"🦁"},{w:"ラケット",wi:0,m:"球拍",e:"🏸"}],
+ "り":[{w:"リュック",wi:0,m:"背包",e:"🎒"},{w:"リレー",wi:0,m:"接力賽",e:"🏃"}],
+ "る":[{w:"ルール",wi:0,m:"規則",e:"📏"},{w:"プール",wi:2,m:"游泳池",e:"🏊"}],
+ "れ":[{w:"レストラン",wi:0,m:"餐廳",e:"🍽️"},{w:"カレー",wi:1,m:"咖哩",e:"🍛"}],
+ "ろ":[{w:"ロープ",wi:0,m:"繩子",e:"🪢"},{w:"メロン",wi:1,m:"哈密瓜",e:"🍈"}],
+ "わ":[{w:"ワッフル",wi:0,m:"鬆餅",e:"🧇"},{w:"タワー",wi:1,m:"高塔",e:"🗼"}],
+ "を":[],
+ "ん":[{w:"ラーメン",wi:3,m:"拉麵",e:"🍜"},{w:"パン",wi:1,m:"麵包",e:"🍞"}],
+ "が":[{w:"メガネ",wi:1,m:"眼鏡",e:"👓"},{w:"ガソリン",wi:0,m:"汽油",e:"⛽"}],
+ "ぎ":[{w:"ギフト",wi:0,m:"禮物",e:"🎁"},{w:"エネルギー",wi:3,m:"能源",e:"⚡"}],
+ "ぐ":[{w:"グラス",wi:0,m:"玻璃杯",e:"🥂"},{w:"ハンバーグ",wi:4,m:"漢堡排",e:"🍖"}],
+ "げ":[{w:"ゲート",wi:0,m:"大門",e:"🚪"},{w:"ゲレンデ",wi:0,m:"滑雪場",e:"🎿"}],
+ "ご":[{w:"ゴール",wi:0,m:"終點",e:"🏁"},{w:"マンゴー",wi:2,m:"芒果",e:"🥭"}],
+ "ざ":[{w:"デザート",wi:1,m:"甜點",e:"🍰"},{w:"ザリガニ",wi:0,m:"螯蝦",e:"🦞"}],
+ "じ":[{w:"ジーンズ",wi:0,m:"牛仔褲",e:"👖"},{w:"レジ",wi:1,m:"收銀台",e:"🛒"}],
+ "ず":[{w:"チーズ",wi:2,m:"起司",e:"🧀"},{w:"サイズ",wi:2,m:"尺寸",e:"📐"}],
+ "ぜ":[{w:"ゼロ",wi:0,m:"零",e:"0️⃣"},{w:"プレゼント",wi:2,m:"禮物",e:"🎁"}],
+ "ぞ":[{w:"ゾーン",wi:0,m:"區域",e:"📍"},{w:"リゾート",wi:1,m:"度假村",e:"🏖️"}],
+ "だ":[{w:"ダンベル",wi:0,m:"啞鈴",e:"🏋️"},{w:"サラダ",wi:2,m:"沙拉",e:"🥗"}],
+ "ぢ":[],
+ "づ":[],
+ "で":[{w:"デザイン",wi:0,m:"設計",e:"🎨"},{w:"モデル",wi:1,m:"模特兒",e:"👗"}],
+ "ど":[{w:"ドア",wi:0,m:"門",e:"🚪"},{w:"サンドイッチ",wi:2,m:"三明治",e:"🥪"}],
+ "ば":[{w:"バナナ",wi:0,m:"香蕉",e:"🍌"},{w:"バター",wi:0,m:"奶油",e:"🧈"}],
+ "び":[{w:"ビル",wi:0,m:"大樓",e:"🏢"},{w:"テレビ",wi:2,m:"電視",e:"📺"}],
+ "ぶ":[{w:"ブラシ",wi:0,m:"刷子",e:"🪥"},{w:"テーブル",wi:2,m:"桌子",e:"🪑"}],
+ "べ":[{w:"ベル",wi:0,m:"鈴鐺",e:"🔔"},{w:"ベランダ",wi:0,m:"陽台",e:"🏡"}],
+ "ぼ":[{w:"ボタン",wi:0,m:"按鈕",e:"🔘"},{w:"リボン",wi:1,m:"緞帶",e:"🎀"}],
+ "ぱ":[{w:"パスタ",wi:0,m:"義大利麵",e:"🍝"},{w:"パトカー",wi:0,m:"警車",e:"🚓"}],
+ "ぴ":[{w:"ピザ",wi:0,m:"披薩",e:"🍕"},{w:"ピンク",wi:0,m:"粉紅色",e:"💗"}],
+ "ぷ":[{w:"プリン",wi:0,m:"布丁",e:"🍮"},{w:"スプーン",wi:1,m:"湯匙",e:"🥄"}],
+ "ぺ":[{w:"ペット",wi:0,m:"寵物",e:"🐶"},{w:"ペダル",wi:0,m:"踏板",e:"🚲"}],
+ "ぽ":[{w:"ポケット",wi:0,m:"口袋",e:"🧥"},{w:"スポーツ",wi:1,m:"運動",e:"⚽"}]
+};
 const CONFUSE = [
  ["ぬ","め","ね"],["わ","れ","ね"],["る","ろ"],["き","さ","ち"],["は","ほ","ま"],
  ["う","つ","ら"],["こ","に","た"],["し","も","と"],["す","む"],["あ","お"],["や","ゆ","よ"],
@@ -560,14 +645,15 @@ const STORE_KEY = "kana50v1";
 let stats = {};
 try{ stats = JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }catch(e){ stats = {} }
 function saveStats(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(stats)) }catch(e){} }
-function getStat(k){ return stats[k] || {c:0,w:0,s:0} }
-function record(k, ok){
-  const st = getStat(k);
+function statKey(k, script){ return script==="kata" ? KATA[k] : k }
+function getStat(key){ return stats[key] || {c:0,w:0,s:0} }
+function record(key, ok){
+  const st = getStat(key);
   if(ok){ st.c++; st.s++; } else { st.w++; st.s=0; }
-  stats[k] = st; saveStats();
+  stats[key] = st; saveStats();
 }
-function mastery(k){
-  const st = getStat(k);
+function mastery(k, script){
+  const st = getStat(statKey(k, script || "hira"));
   if(st.c+st.w === 0) return "new";
   if(st.s >= 3) return "good";
   if(st.w > st.c) return "weak";
@@ -627,12 +713,12 @@ function renderKanaGrid(container, rows, onTap, script){
       cell.className = "kana-cell";
       if(k===null){ cell.classList.add("grid-gap"); cell.tabIndex=-1; }
       else{
-        cell.classList.add("m"+"-"+mastery(k));
+        cell.classList.add("m"+"-"+mastery(k, script==="kata" ? "kata" : "hira"));
         const d = DATA[IDX[k]];
         const main = script==="kata" ? KATA[k] : k;
         const small = script==="kata" ? k : KATA[k];
         cell.innerHTML = `<div class="k kana-font">${main}<span class="kk">${small}</span></div><div class="r">${d.r}</div>`;
-        cell.addEventListener("click", ()=>onTap(IDX[k]));
+        cell.addEventListener("click", ()=>onTap(IDX[k], script));
       }
       container.appendChild(cell);
     });
@@ -660,17 +746,26 @@ function kataTipText(d){
     ? KATA[d.src[0]] + d.src.slice(1) + "＝" + KATA[d.k] + "。"
     : KCARD[d.k].tip;
 }
-let cardIdx = 0;
-function openCard(i){
+let cardIdx = 0, overlayScript = "hira";
+function openCard(i, script){
+  if(script) overlayScript = script==="kata" ? "kata" : "hira";
   cardIdx = i;
   const d = DATA[i];
   const kc = KCARD[d.k];
-  const kata = cardScript === "kata";
+  const kata = overlayScript === "kata";
   el("cKana").textContent = kata ? KATA[d.k] : d.k;
   el("cRomaji").textContent = d.r;
   el("cAltLabel").textContent = kata ? "平假名" : "片假名";
   el("cKata").textContent = kata ? d.k : KATA[d.k];
   const subs = el("cSubs"); subs.innerHTML = "";
+  const subList = kata ? (KSUB[d.k] || []) : d.sub;
+  subList.forEach(s=>{
+    const chip = document.createElement("button");
+    chip.className = "sub-chip kana-font";
+    chip.innerHTML = "🔊 " + wordHTML(s,"hl") + `<span class="m">${s.m}${s.e ? " "+s.e : ""}</span>`;
+    chip.addEventListener("click", (e)=>{ e.stopPropagation(); speak(s.w); });
+    subs.appendChild(chip);
+  });
   if(kata){
     el("cSrc").textContent = d.src.includes("＋")
       ? KATA[d.k] + " ＝ " + kataSrcText(d)
@@ -684,13 +779,6 @@ function openCard(i){
     el("cEmoji").textContent = d.e;
     el("cWord").innerHTML = wordHTML(d,"hl");
     el("cMean").textContent = d.m;
-    d.sub.forEach(s=>{
-      const chip = document.createElement("button");
-      chip.className = "sub-chip kana-font";
-      chip.innerHTML = "🔊 " + wordHTML(s,"hl") + `<span class="m">${s.m}${s.e ? " "+s.e : ""}</span>`;
-      chip.addEventListener("click", (e)=>{ e.stopPropagation(); speak(s.w); });
-      subs.appendChild(chip);
-    });
     el("cTip").innerHTML = "<b>諧音</b>　" + d.tipS + "<br><b>圖像</b>　" + d.tipI;
   }
   el("cardPos").textContent = (i+1) + " / " + DATA.length;
@@ -707,7 +795,7 @@ el("cKana").addEventListener("click", ()=>speak(DATA[cardIdx].k));
 el("cKata").addEventListener("click", ()=>speak(DATA[cardIdx].k));
 el("cWordBlock").addEventListener("click", ()=>{
   const d = DATA[cardIdx];
-  speak(cardScript==="kata" ? KCARD[d.k].w : d.w);
+  speak(overlayScript==="kata" ? KCARD[d.k].w : d.w);
 });
 renderCardGrids();
 
@@ -774,18 +862,29 @@ function renderRange(){
   el("rangeCount").textContent = "目前 " + rangeKanas().length + " 個音";
 }
 renderRange();
+let quizScript = "hira";
+try{ quizScript = localStorage.getItem("kana50qscript") || "hira" }catch(e){}
+function setQuizScript(s){
+  quizScript = s;
+  try{ localStorage.setItem("kana50qscript", s) }catch(e){}
+  el("qsHira").classList.toggle("on", s==="hira");
+  el("qsKata").classList.toggle("on", s==="kata");
+}
+el("qsHira").addEventListener("click", ()=>setQuizScript("hira"));
+el("qsKata").addEventListener("click", ()=>setQuizScript("kata"));
+setQuizScript(quizScript);
 
 /* ================= 測驗 ================= */
 const QUIZ_LEN = 10;
 let quiz = null;
 function weightOf(k){
-  const m = mastery(k);
+  const m = mastery(k, quizScript);
   return m==="weak" ? 5 : m==="mid" ? 3 : m==="new" ? 2 : 1;
 }
 function pickTargets(mode, n){
   let pool = rangeKanas();
   if(mode==="weak"){
-    const weakPool = pool.filter(k=>{ const m=mastery(k); return m==="weak"||m==="mid" });
+    const weakPool = pool.filter(k=>{ const m=mastery(k, quizScript); return m==="weak"||m==="mid" });
     if(weakPool.length >= 4) pool = weakPool;
   }
   const picked = [];
@@ -839,9 +938,10 @@ function showQuestion(){
   el("qNext").classList.add("hidden");
   const qc = el("qCard"), ag = el("ansGrid");
   ag.innerHTML = "";
-  let labelFor = x=>x, isRomaji = false;
+  const kataQ = quizScript==="kata";
+  let labelFor = kataQ ? (x=>KATA[x]) : (x=>x), isRomaji = false;
   if(qtype==="read"){
-    qc.innerHTML = `<div class="q-label">這個假名怎麼唸？</div><div class="q-kana kana-font">${d.k}</div>`;
+    qc.innerHTML = `<div class="q-label">這個假名怎麼唸？</div><div class="q-kana kana-font">${kataQ ? KATA[d.k] : d.k}</div>`;
     labelFor = x=>DATA[IDX[x]].r; isRomaji = true;
   }else if(qtype==="listen"){
     qc.innerHTML = `<div class="q-label">聽發音，選出正確的假名</div><button class="play-big" id="qPlay">🔊 播放</button>`;
@@ -850,13 +950,15 @@ function showQuestion(){
   }else if(qtype==="kata"){
     if(Math.random() < 0.5){
       qc.innerHTML = `<div class="q-label">這個片假名的平假名是？</div><div class="q-kana kana-font">${KATA[d.k]}</div>`;
+      labelFor = x=>x;
     }else{
       qc.innerHTML = `<div class="q-label">「${d.k}」的片假名是？</div><div class="q-kana kana-font">${d.k}</div>`;
       labelFor = x=>KATA[x];
     }
   }else{
-    const blanked = d.w.split("").map((ch,i)=> i===d.wi ? '<span class="blank">◯</span>' : ch).join("");
-    qc.innerHTML = `<div class="q-label">◯ 是哪個假名？</div><div class="q-emoji">${d.e}</div><div class="q-word kana-font">${blanked}</div><div class="q-mean">${d.m}</div>`;
+    const wd = kataQ ? KCARD[d.k] : d;
+    const blanked = wd.w.split("").map((ch,i)=> i===wd.wi ? '<span class="blank">◯</span>' : ch).join("");
+    qc.innerHTML = `<div class="q-label">◯ 是哪個假名？</div><div class="q-emoji">${wd.e}</div><div class="q-word kana-font">${blanked}</div><div class="q-mean">${wd.m}</div>`;
   }
   const exclude = qtype==="listen" ? (HOMO[k] || []) : [];
   const opts = shuffle([k, ...distractors(k, 3, exclude)]);
@@ -872,7 +974,8 @@ function showQuestion(){
 function answer(btn, ok, k, grid){
   if(quiz.answered) return;
   quiz.answered = true;
-  record(k, ok);
+  const kataQ = quizScript==="kata";
+  record(statKey(k, (kataQ || quiz.qtype==="kata") ? "kata" : "hira"), ok);
   const d = DATA[IDX[k]];
   grid.querySelectorAll(".ans-btn").forEach(b=>{
     if(b.dataset.kana===k) b.classList.add("correct");
@@ -883,22 +986,25 @@ function answer(btn, ok, k, grid){
   if(ok){ quiz.score++; fb.textContent = "答對了！"; fb.classList.add("ok"); }
   else{
     quiz.wrong.push(k);
-    fb.textContent = `答錯了，正確是「${d.k}」（${d.r}）`;
+    fb.textContent = `答錯了，正確是「${kataQ ? KATA[d.k] : d.k}」（${d.r}）`;
     fb.classList.add("no");
   }
+  const kc = KCARD[k];
+  const wd = kataQ ? {w:kc.w, wi:kc.wi, m:kc.m, e:kc.e} : d;
+  const tipI = kataQ ? kataTipText(d) : d.tipI;
   const rev = el("qReview");
   rev.innerHTML =
-    `<div class="mc-head"><span class="mc-kana kana-font">${d.k}</span><span class="mc-r">${d.r}・${KATA[d.k]}</span>` +
-    `<span class="mc-word kana-font">${wordHTML(d,"hl")} ${d.e}<span class="mc-mean">${d.m}</span></span></div>` +
-    `<div class="mc-tips"><b>諧音</b>　${d.tipS}<br><b>圖像</b>　${d.tipI}</div>` +
+    `<div class="mc-head"><span class="mc-kana kana-font">${kataQ ? KATA[d.k] : d.k}</span><span class="mc-r">${d.r}・${kataQ ? d.k : KATA[d.k]}</span>` +
+    `<span class="mc-word kana-font">${wordHTML(wd,"hl")} ${wd.e}<span class="mc-mean">${wd.m}</span></span></div>` +
+    `<div class="mc-tips"><b>諧音</b>　${d.tipS}<br><b>圖像</b>　${tipI}</div>` +
     `<div class="mc-open">點一下打開完整字卡 →</div>`;
   rev.classList.remove("hidden");
-  speak(d.k + "、" + d.w);
+  speak(d.k + "、" + wd.w);
   el("qNext").textContent = quiz.i+1 >= QUIZ_LEN ? "看成績" : "下一題";
   el("qNext").classList.remove("hidden");
 }
 el("qReview").addEventListener("click", ()=>{
-  if(quiz && quiz.answered) openCard(IDX[quiz.targets[quiz.i]]);
+  if(quiz && quiz.answered) openCard(IDX[quiz.targets[quiz.i]], quizScript);
 });
 el("qNext").addEventListener("click", ()=>{
   quiz.i++;
@@ -914,7 +1020,7 @@ function showResult(){
   el("resScore").textContent = quiz.score + " / " + QUIZ_LEN;
   const uniq = [...new Set(quiz.wrong)];
   el("resWrongWrap").style.display = uniq.length ? "" : "none";
-  el("resWrong").textContent = uniq.join(" ");
+  el("resWrong").textContent = uniq.map(x=> quizScript==="kata" ? KATA[x] : x).join(" ");
 }
 el("resAgain").addEventListener("click", ()=>startQuiz(quiz.mode));
 el("resBack").addEventListener("click", ()=>{
@@ -993,15 +1099,26 @@ function flip(btn){
 el("gameRestart").addEventListener("click", startGame);
 
 /* ================= 進度 ================= */
+let progScript = "hira";
+el("pgHira").addEventListener("click", ()=>{
+  progScript = "hira";
+  el("pgHira").classList.add("on"); el("pgKata").classList.remove("on");
+  renderProgress();
+});
+el("pgKata").addEventListener("click", ()=>{
+  progScript = "kata";
+  el("pgKata").classList.add("on"); el("pgHira").classList.remove("on");
+  renderProgress();
+});
 function renderProgress(){
   const counts = {good:0, mid:0, weak:0, new:0};
-  DATA.forEach(d=>counts[mastery(d.k)]++);
+  DATA.forEach(d=>counts[mastery(d.k, progScript)]++);
   el("stGood").textContent = counts.good;
   el("stMid").textContent = counts.mid;
   el("stWeak").textContent = counts.weak;
   el("stNew").textContent = counts.new;
-  renderKanaGrid(el("progGrid"), ROWS, openCard);
-  renderKanaGrid(el("progGridDaku"), DAKU_ROWS, openCard);
+  renderKanaGrid(el("progGrid"), ROWS, openCard, progScript);
+  renderKanaGrid(el("progGridDaku"), DAKU_ROWS, openCard, progScript);
 }
 el("resetBtn").addEventListener("click", ()=>{
   if(confirm("確定要清除所有學習紀錄嗎？")){
