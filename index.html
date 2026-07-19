@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#D5495B">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <title>50音字卡</title>
 </head>
 <body>
@@ -70,6 +72,8 @@
   .grid-gap{visibility:hidden}
   .grid-label{margin:18px 2px 8px; font-size:14px; font-weight:700; color:var(--sub)}
   .kana-cell .kk{font-size:12px; color:var(--sub); margin-left:3px}
+  .kana-grid.yoon{grid-template-columns:repeat(3,1fr)}
+  .kana-grid.yoon .k{font-size:22px}
 
   /* ---- card overlay ---- */
   #cardOverlay{
@@ -267,6 +271,20 @@
     <div class="kana-grid" id="cardsGrid"></div>
     <div class="grid-label">濁音・半濁音</div>
     <div class="kana-grid" id="cardsGridDaku"></div>
+    <div class="grid-label">拗音</div>
+    <div class="kana-grid yoon" id="cardsGridYoon"></div>
+    <div class="grid-label">小教室：促音「っ」與長音</div>
+    <div class="q-card" style="text-align:left; font-size:15px">
+      <p style="margin:0 0 10px"><b>促音 っ</b>（小小的つ）：不發音，停頓一拍再唸下一個音。比較看看：
+        <button class="sub-chip kana-font" onclick="speak('おと')">🔊 おと（聲音）</button>
+        <button class="sub-chip kana-font" onclick="speak('おっと')">🔊 おっと（丈夫）</button></p>
+      <p style="margin:0 0 10px"><b>長音</b>：母音拉長一拍，意思會完全不同：
+        <button class="sub-chip kana-font" onclick="speak('おばさん')">🔊 おばさん（阿姨）</button>
+        <button class="sub-chip kana-font" onclick="speak('おばあさん')">🔊 おばあさん（奶奶）</button></p>
+      <p style="margin:0"><b>片假名的長音</b>寫成一橫「ー」：
+        <button class="sub-chip kana-font" onclick="speak('コーヒー')">🔊 コーヒー（咖啡）</button>
+        <button class="sub-chip kana-font" onclick="speak('ケーキ')">🔊 ケーキ（蛋糕）</button></p>
+    </div>
   </section>
 
   <!-- 測驗 -->
@@ -288,6 +306,9 @@
       <button class="mode-btn" data-mode="listen"><span class="ic">👂</span><span><span class="t">聽音選字</span><br><span class="d">聽發音，選出正確的假名</span></span></button>
       <button class="mode-btn" data-mode="word"><span class="ic">🖼️</span><span><span class="t">看圖選字</span><br><span class="d">看圖片和單字，填上缺少的假名</span></span></button>
       <button class="mode-btn" data-mode="kata"><span class="ic">🔁</span><span><span class="t">平片配對</span><br><span class="d">平假名和片假名互相對應</span></span></button>
+      <button class="mode-btn" data-mode="vocab"><span class="ic">🔉</span><span><span class="t">聽單字選圖</span><br><span class="d">聽整個單字的發音，選出正確的圖</span></span></button>
+      <button class="mode-btn" data-mode="confuse"><span class="ic">⚔️</span><span><span class="t">相似字大亂鬥</span><br><span class="d">專考長得像的字：ぬ/め、シ/ツ、る/ろ…</span></span></button>
+      <button class="mode-btn" data-mode="due"><span class="ic">📅</span><span><span class="t">今日複習</span><br><span class="d" id="dueDesc">依間隔重複排程，複習到期的音</span></span></button>
       <button class="mode-btn" data-mode="weak"><span class="ic">🔥</span><span><span class="t">弱點複習</span><br><span class="d">混合題型，專攻你答錯過、還不熟的音</span></span></button>
     </div>
     <div id="quizArea" class="hidden">
@@ -314,14 +335,23 @@
 
   <!-- 遊戲 -->
   <section id="view-game" class="hidden">
-    <p class="section-note">配對翻牌：選一種玩法，把成對的牌找出來。</p>
+    <p class="section-note">選一種玩法：配對翻牌把成對的牌找出來；限時挑戰 60 秒連續答題衝高分。</p>
     <div class="range-chips" style="margin-bottom:10px">
       <button class="range-chip on" id="gmSound">假名⇄讀音</button>
       <button class="range-chip" id="gmKata">平⇄片</button>
+      <button class="range-chip" id="gmTimed">⏱️ 限時挑戰</button>
     </div>
-    <div class="game-info"><span id="gameMoves">翻牌 0 次</span><button class="icon-btn" id="gameRestart">🔄 重新開始</button></div>
-    <div class="game-grid" id="gameGrid"></div>
-    <div class="game-done hidden" id="gameDone"></div>
+    <div id="matchWrap">
+      <div class="game-info"><span id="gameMoves">翻牌 0 次</span><button class="icon-btn" id="gameRestart">🔄 重新開始</button></div>
+      <div class="game-grid" id="gameGrid"></div>
+      <div class="game-done hidden" id="gameDone"></div>
+    </div>
+    <div id="timedPanel" class="hidden">
+      <div class="q-card"><div class="q-label" id="tdInfo"></div><div class="q-kana kana-font" id="tdKana"></div></div>
+      <div class="ans-grid" id="tdAns"></div>
+      <button class="next-btn" id="tdStart">開始挑戰</button>
+      <div class="game-done hidden" id="tdDone"></div>
+    </div>
   </section>
 
   <!-- 進度 -->
@@ -345,6 +375,12 @@
     <div class="kana-grid" id="progGrid"></div>
     <div class="grid-label">濁音・半濁音</div>
     <div class="kana-grid" id="progGridDaku"></div>
+    <div class="grid-label">拗音</div>
+    <div class="kana-grid yoon" id="progGridYoon"></div>
+    <div class="nav-row">
+      <button class="nav-btn" id="expBtn">📤 匯出紀錄</button>
+      <button class="nav-btn" id="impBtn">📥 匯入紀錄</button>
+    </div>
     <button class="danger-btn" id="resetBtn">清除所有學習紀錄</button>
   </section>
 </div>
@@ -369,6 +405,14 @@
       </div>
       <div class="tip-box" id="cTip"></div>
       <div class="tap-hint">🔊 點大字唸假名．點圖片或單字唸單字</div>
+      <button class="nav-btn" style="width:100%;margin-top:12px" id="traceBtn">✍️ 手寫描紅</button>
+      <div id="tracePanel" class="hidden" style="margin-top:10px">
+        <canvas id="traceCv" width="300" height="300" style="width:260px;height:260px;max-width:100%;background:var(--bg);border:1px dashed var(--line);border-radius:12px;touch-action:none"></canvas>
+        <div class="nav-row">
+          <button class="nav-btn" id="traceClear">🧽 清除重寫</button>
+          <button class="nav-btn" id="traceClose">收起</button>
+        </div>
+      </div>
     </div>
     <div class="nav-row">
       <button class="nav-btn" id="cardPrev">← 上一個</button>
@@ -458,7 +502,40 @@ const DATA = [
  {k:"ぴ",r:"pi",src:"ひ＋゜",w:"ぴかぴか",wi:0,m:"亮晶晶",e:"✨",tipS:"哨子「嗶（pi）」——尖尖的 p 音。",tipI:"ひ＋゜＝ぴ。",sub:[{w:"えんぴつ",wi:2,m:"鉛筆",e:"✏️"}]},
  {k:"ぷ",r:"pu",src:"ふ＋゜",w:"てんぷら",wi:2,m:"天婦羅",e:"🍤",tipS:"「噗（pu）」地噴出。",tipI:"ふ＋゜＝ぷ。",sub:[{w:"ぷかぷか",wi:0,m:"漂浮貌",e:"🎈"}]},
  {k:"ぺ",r:"pe",src:"へ＋゜",w:"ぺこぺこ",wi:0,m:"肚子餓扁",e:"🍽️",tipS:"「呸（pe）」。",tipI:"へ＋゜＝ぺ。",sub:[{w:"ぺらぺら",wi:0,m:"口語流利",e:"🗣️"}]},
- {k:"ぽ",r:"po",src:"ほ＋゜",w:"さんぽ",wi:2,m:"散步",e:"🚶",tipS:"水滴「啵（po）」。",tipI:"ほ＋゜＝ぽ。",sub:[{w:"たんぽぽ",wi:2,m:"蒲公英",e:"🌼"},{w:"しっぽ",wi:2,m:"尾巴",e:"🐕"}]}
+ {k:"ぽ",r:"po",src:"ほ＋゜",w:"さんぽ",wi:2,m:"散步",e:"🚶",tipS:"水滴「啵（po）」。",tipI:"ほ＋゜＝ぽ。",sub:[{w:"たんぽぽ",wi:2,m:"蒲公英",e:"🌼"},{w:"しっぽ",wi:2,m:"尾巴",e:"🐕"}]},
+ {k:"きゃ",r:"kya",n:2,src:"き＋ゃ",w:"きゃく",wi:0,m:"客人",e:"🙇",tipS:"ki＋ya 快速連唸＝kya。",tipI:"き＋小さいゃ＝きゃ，兩個字唸成一拍。",sub:[]},
+ {k:"きゅ",r:"kyu",n:2,src:"き＋ゅ",w:"きゅうり",wi:0,m:"小黃瓜",e:"🥒",tipS:"ki＋yu 連唸＝kyu。",tipI:"き＋小さいゅ＝きゅ，一拍唸完。",sub:[{w:"きゅうきゅうしゃ",wi:0,n:2,m:"救護車",e:"🚑"}]},
+ {k:"きょ",r:"kyo",n:2,src:"き＋ょ",w:"きょう",wi:0,m:"今天",e:"📅",tipS:"ki＋yo 連唸＝kyo。",tipI:"き＋小さいょ＝きょ，一拍唸完。",sub:[{w:"きょうしつ",wi:0,n:2,m:"教室",e:"🏫"}]},
+ {k:"しゃ",r:"sha",n:2,src:"し＋ゃ",w:"しゃしん",wi:0,m:"照片",e:"📸",tipS:"shi＋ya 連唸＝sha。",tipI:"し＋小さいゃ＝しゃ，一拍唸完。",sub:[{w:"でんしゃ",wi:2,n:2,m:"電車",e:"🚃"}]},
+ {k:"しゅ",r:"shu",n:2,src:"し＋ゅ",w:"しゅくだい",wi:0,m:"作業",e:"📚",tipS:"shi＋yu 連唸＝shu。",tipI:"し＋小さいゅ＝しゅ，一拍唸完。",sub:[{w:"せんしゅ",wi:2,n:2,m:"選手",e:"🏅"}]},
+ {k:"しょ",r:"sho",n:2,src:"し＋ょ",w:"しょうゆ",wi:0,m:"醬油",e:"🍶",tipS:"shi＋yo 連唸＝sho。",tipI:"し＋小さいょ＝しょ，一拍唸完。",sub:[{w:"じしょ",wi:1,n:2,m:"字典",e:"📖"}]},
+ {k:"ちゃ",r:"cha",n:2,src:"ち＋ゃ",w:"おちゃ",wi:1,m:"茶",e:"🍵",tipS:"chi＋ya 連唸＝cha。",tipI:"ち＋小さいゃ＝ちゃ，一拍唸完。",sub:[{w:"ちゃわん",wi:0,n:2,m:"碗",e:"🍚"}]},
+ {k:"ちゅ",r:"chu",n:2,src:"ち＋ゅ",w:"ちゅうしゃ",wi:0,m:"打針",e:"💉",tipS:"chi＋yu 連唸＝chu。",tipI:"ち＋小さいゅ＝ちゅ，一拍唸完。",sub:[{w:"うちゅう",wi:1,n:2,m:"宇宙",e:"🌌"}]},
+ {k:"ちょ",r:"cho",n:2,src:"ち＋ょ",w:"ちょう",wi:0,m:"蝴蝶",e:"🦋",tipS:"chi＋yo 連唸＝cho。",tipI:"ち＋小さいょ＝ちょ，一拍唸完。",sub:[{w:"ちょきん",wi:0,n:2,m:"存錢",e:"💰"}]},
+ {k:"にゃ",r:"nya",n:2,src:"に＋ゃ",w:"にゃんこ",wi:0,m:"貓咪",e:"🐱",tipS:"ni＋ya 連唸＝nya，貓叫「にゃー」！",tipI:"に＋小さいゃ＝にゃ，一拍唸完。",sub:[]},
+ {k:"にゅ",r:"nyu",n:2,src:"に＋ゅ",w:"にゅういん",wi:0,m:"住院",e:"🏥",tipS:"ni＋yu 連唸＝nyu。",tipI:"に＋小さいゅ＝にゅ，一拍唸完。",sub:[{w:"ぎゅうにゅう",wi:3,n:2,m:"牛奶",e:"🥛"}]},
+ {k:"にょ",r:"nyo",n:2,src:"に＋ょ",w:"にょろにょろ",wi:0,m:"蛇扭動貌",e:"🐍",tipS:"ni＋yo 連唸＝nyo。",tipI:"に＋小さいょ＝にょ，一拍唸完。",sub:[]},
+ {k:"ひゃ",r:"hya",n:2,src:"ひ＋ゃ",w:"ひゃく",wi:0,m:"一百",e:"💯",tipS:"hi＋ya 連唸＝hya。",tipI:"ひ＋小さいゃ＝ひゃ，一拍唸完。",sub:[]},
+ {k:"ひゅ",r:"hyu",n:2,src:"ひ＋ゅ",w:"ひゅーひゅー",wi:0,m:"風聲",e:"🌬️",tipS:"hi＋yu 連唸＝hyu，風「咻咻」。",tipI:"ひ＋小さいゅ＝ひゅ，一拍唸完。",sub:[]},
+ {k:"ひょ",r:"hyo",n:2,src:"ひ＋ょ",w:"ひょう",wi:0,m:"豹",e:"🐆",tipS:"hi＋yo 連唸＝hyo。",tipI:"ひ＋小さいょ＝ひょ，一拍唸完。",sub:[{w:"ひょうざん",wi:0,n:2,m:"冰山",e:"🧊"}]},
+ {k:"みゃ",r:"mya",n:2,src:"み＋ゃ",w:"みゃく",wi:0,m:"脈搏",e:"💓",tipS:"mi＋ya 連唸＝mya。",tipI:"み＋小さいゃ＝みゃ，一拍唸完。",sub:[]},
+ {k:"みゅ",r:"myu",n:2,src:"み＋ゅ",w:"ミュージック",wi:0,m:"音樂（幾乎只用於外來語）",e:"🎵",tipS:"mi＋yu 連唸＝myu。",tipI:"み＋小さいゅ＝みゅ，一拍唸完。",sub:[]},
+ {k:"みょ",r:"myo",n:2,src:"み＋ょ",w:"みょうじ",wi:0,m:"姓氏",e:"📛",tipS:"mi＋yo 連唸＝myo。",tipI:"み＋小さいょ＝みょ，一拍唸完。",sub:[]},
+ {k:"りゃ",r:"rya",n:2,src:"り＋ゃ",w:"りゃくご",wi:0,m:"縮寫",e:"🔤",tipS:"ri＋ya 連唸＝rya。",tipI:"り＋小さいゃ＝りゃ，一拍唸完。",sub:[]},
+ {k:"りゅ",r:"ryu",n:2,src:"り＋ゅ",w:"りゅう",wi:0,m:"龍",e:"🐉",tipS:"ri＋yu 連唸＝ryu。",tipI:"り＋小さいゅ＝りゅ，一拍唸完。",sub:[{w:"りゅうがく",wi:0,n:2,m:"留學",e:"✈️"}]},
+ {k:"りょ",r:"ryo",n:2,src:"り＋ょ",w:"りょこう",wi:0,m:"旅行",e:"🧳",tipS:"ri＋yo 連唸＝ryo。",tipI:"り＋小さいょ＝りょ，一拍唸完。",sub:[{w:"りょうり",wi:0,n:2,m:"料理",e:"🍳"}]},
+ {k:"ぎゃ",r:"gya",n:2,src:"ぎ＋ゃ",w:"ぎゃく",wi:0,m:"相反",e:"🔄",tipS:"gi＋ya 連唸＝gya。",tipI:"ぎ＋小さいゃ＝ぎゃ，一拍唸完。",sub:[]},
+ {k:"ぎゅ",r:"gyu",n:2,src:"ぎ＋ゅ",w:"ぎゅうにゅう",wi:0,m:"牛奶",e:"🥛",tipS:"gi＋yu 連唸＝gyu。",tipI:"ぎ＋小さいゅ＝ぎゅ，一拍唸完。",sub:[{w:"ぎゅうどん",wi:0,n:2,m:"牛丼",e:"🥩"}]},
+ {k:"ぎょ",r:"gyo",n:2,src:"ぎ＋ょ",w:"きんぎょ",wi:2,m:"金魚",e:"🐠",tipS:"gi＋yo 連唸＝gyo。",tipI:"ぎ＋小さいょ＝ぎょ，一拍唸完。",sub:[{w:"ぎょうざ",wi:0,n:2,m:"煎餃",e:"🥟"}]},
+ {k:"じゃ",r:"ja",n:2,src:"じ＋ゃ",w:"じゃがいも",wi:0,m:"馬鈴薯",e:"🥔",tipS:"ji＋ya 連唸＝ja。",tipI:"じ＋小さいゃ＝じゃ，一拍唸完。",sub:[{w:"じゃんけん",wi:0,n:2,m:"猜拳",e:"✊"}]},
+ {k:"じゅ",r:"ju",n:2,src:"じ＋ゅ",w:"じゅぎょう",wi:0,m:"上課",e:"🏫",tipS:"ji＋yu 連唸＝ju。",tipI:"じ＋小さいゅ＝じゅ，一拍唸完。",sub:[{w:"じゅう",wi:0,n:2,m:"十",e:"🔟"}]},
+ {k:"じょ",r:"jo",n:2,src:"じ＋ょ",w:"じょうず",wi:0,m:"擅長",e:"👍",tipS:"ji＋yo 連唸＝jo。",tipI:"じ＋小さいょ＝じょ，一拍唸完。",sub:[{w:"かのじょ",wi:2,n:2,m:"女朋友",e:"👩"}]},
+ {k:"びゃ",r:"bya",n:2,src:"び＋ゃ",w:"さんびゃく",wi:2,m:"三百",e:"💯",tipS:"bi＋ya 連唸＝bya。",tipI:"び＋小さいゃ＝びゃ，一拍唸完。",sub:[]},
+ {k:"びゅ",r:"byu",n:2,src:"び＋ゅ",w:"びゅんびゅん",wi:0,m:"咻咻聲",e:"💨",tipS:"bi＋yu 連唸＝byu。",tipI:"び＋小さいゅ＝びゅ，一拍唸完。",sub:[]},
+ {k:"びょ",r:"byo",n:2,src:"び＋ょ",w:"びょういん",wi:0,m:"醫院",e:"🏥",tipS:"bi＋yo 連唸＝byo。",tipI:"び＋小さいょ＝びょ，一拍唸完。",sub:[{w:"びょうき",wi:0,n:2,m:"生病",e:"🤒"}]},
+ {k:"ぴゃ",r:"pya",n:2,src:"ぴ＋ゃ",w:"はっぴゃく",wi:2,m:"八百",e:"🔢",tipS:"pi＋ya 連唸＝pya。",tipI:"ぴ＋小さいゃ＝ぴゃ，一拍唸完。",sub:[]},
+ {k:"ぴゅ",r:"pyu",n:2,src:"ぴ＋ゅ",w:"ぴゅーぴゅー",wi:0,m:"寒風聲",e:"❄️",tipS:"pi＋yu 連唸＝pyu。",tipI:"ぴ＋小さいゅ＝ぴゅ，一拍唸完。",sub:[]},
+ {k:"ぴょ",r:"pyo",n:2,src:"ぴ＋ょ",w:"ぴょんぴょん",wi:0,m:"蹦蹦跳",e:"🐰",tipS:"pi＋yo 連唸＝pyo。",tipI:"ぴ＋小さいょ＝ぴょ，一拍唸完。",sub:[]}
 ];
 const IDX = {}; DATA.forEach((d,i)=>IDX[d.k]=i);
 const ROWS = [
@@ -481,7 +558,22 @@ const KATA = {
  "だ":"ダ","ぢ":"ヂ","づ":"ヅ","で":"デ","ど":"ド","ば":"バ","び":"ビ","ぶ":"ブ","べ":"ベ","ぼ":"ボ",
  "ぱ":"パ","ぴ":"ピ","ぷ":"プ","ぺ":"ペ","ぽ":"ポ"
 };
+function toKata(s){ return s.split("").map(c=>KATA[c]||SMALLK[c]||c).join("") }
+const YOON_ROWS = [
+ ["きゃ","きゅ","きょ"],["しゃ","しゅ","しょ"],["ちゃ","ちゅ","ちょ"],["にゃ","にゅ","にょ"],
+ ["ひゃ","ひゅ","ひょ"],["みゃ","みゅ","みょ"],["りゃ","りゅ","りょ"],
+ ["ぎゃ","ぎゅ","ぎょ"],["じゃ","じゅ","じょ"],["びゃ","びゅ","びょ"],["ぴゃ","ぴゅ","ぴょ"]
+];
+const SMALLK = {"ゃ":"ャ","ゅ":"ュ","ょ":"ョ"};
 const HOMO = {"じ":["ぢ"],"ぢ":["じ"],"ず":["づ"],"づ":["ず"],"を":["お"],"お":["を"]};
+/* 相似字組（大亂鬥用）：平假名／片假名各一套 */
+const HARDG_H = [
+ ["ぬ","め","ね"],["わ","れ","ね"],["る","ろ"],["き","さ","ち"],["は","ほ","ま"],
+ ["し","つ"],["そ","ん"],["う","ふ","わ"],["く","た"]
+];
+const HARDG_K = [
+ ["し","つ","そ","ん"],["く","た","け"],["う","ふ","わ","ら"],["ろ","こ","ゆ"],["す","ぬ"]
+];
 /* 片假名專屬字卡資料（濁音的字源與圖像口訣由清音自動推導） */
 const KCARD = {
  "あ":{src:"阿",tip:"像屋頂上的天線（antenna，a）。",w:"アイス",wi:0,m:"冰淇淋",e:"🍦"},
@@ -554,7 +646,40 @@ const KCARD = {
  "ぴ":{w:"ピアノ",wi:0,m:"鋼琴",e:"🎹"},
  "ぷ":{w:"プール",wi:0,m:"游泳池",e:"🏊"},
  "ぺ":{w:"ペンギン",wi:0,m:"企鵝",e:"🐧"},
- "ぽ":{w:"ポテト",wi:0,m:"薯條",e:"🍟"}
+ "ぽ":{w:"ポテト",wi:0,m:"薯條",e:"🍟"},
+ "きゃ":{w:"キャンディ",wi:0,n:2,m:"糖果",e:"🍭"},
+ "きゅ":{w:"バーベキュー",wi:3,n:2,m:"烤肉",e:"🍖"},
+ "きょ":{w:"キョロキョロ",wi:0,n:2,m:"東張西望",e:"👀"},
+ "しゃ":{w:"シャワー",wi:0,n:2,m:"淋浴",e:"🚿"},
+ "しゅ":{w:"シュークリーム",wi:0,n:2,m:"泡芙",e:"🧁"},
+ "しょ":{w:"ショップ",wi:0,n:2,m:"商店",e:"🏪"},
+ "ちゃ":{w:"チャーハン",wi:0,n:2,m:"炒飯",e:"🍚"},
+ "ちゅ":{w:"チューリップ",wi:0,n:2,m:"鬱金香",e:"🌷"},
+ "ちょ":{w:"チョコレート",wi:0,n:2,m:"巧克力",e:"🍫"},
+ "にゃ":{w:"ニャー",wi:0,n:2,m:"貓叫聲",e:"🐱"},
+ "にゅ":{w:"メニュー",wi:1,n:2,m:"菜單",e:"📋"},
+ "にょ":{w:"ニョッキ",wi:0,n:2,m:"義式麵疙瘩",e:"🍝"},
+ "ひゃ":{w:"ヒャッホー",wi:0,n:2,m:"歡呼聲",e:"🙌"},
+ "ひゅ":{w:"ヒューズ",wi:0,n:2,m:"保險絲",e:"⚡"},
+ "ひょ":{w:"ヒョウ",wi:0,n:2,m:"豹",e:"🐆"},
+ "みゃ":{w:"ミャンマー",wi:0,n:2,m:"緬甸",e:"🇲🇲"},
+ "みゅ":{w:"ミュージック",wi:0,n:2,m:"音樂",e:"🎵"},
+ "みょ":{w:"ミョウガ",wi:0,n:2,m:"茗荷",e:"🌱"},
+ "りゃ":{w:"リャマ",wi:0,n:2,m:"駱馬",e:"🦙"},
+ "りゅ":{w:"リュック",wi:0,n:2,m:"背包",e:"🎒"},
+ "りょ":{w:"リョコウ",wi:0,n:2,m:"旅行（廣告常見寫法）",e:"🧳"},
+ "ぎゃ":{w:"ギャグ",wi:0,n:2,m:"搞笑哏",e:"😂"},
+ "ぎゅ":{w:"ギュッと",wi:0,n:2,m:"緊緊地",e:"🤗"},
+ "ぎょ":{w:"ギョウザ",wi:0,n:2,m:"煎餃",e:"🥟"},
+ "じゃ":{w:"ジャム",wi:0,n:2,m:"果醬",e:"🍯"},
+ "じゅ":{w:"ジュエリー",wi:0,n:2,m:"珠寶",e:"💍"},
+ "じょ":{w:"ジョギング",wi:0,n:2,m:"慢跑",e:"🏃"},
+ "びゃ":{w:"ビャッコ",wi:0,n:2,m:"白虎",e:"🐯"},
+ "びゅ":{w:"ビュッフェ",wi:0,n:2,m:"自助餐",e:"🍽️"},
+ "びょ":{w:"ビョーン",wi:0,n:2,m:"彈跳聲",e:"🤸"},
+ "ぴゃ":{w:"ピャー",wi:0,n:2,m:"尖叫聲",e:"😱"},
+ "ぴゅ":{w:"ピューレ",wi:0,n:2,m:"果泥",e:"🍎"},
+ "ぴょ":{w:"ピョンピョン",wi:0,n:2,m:"蹦蹦跳",e:"🐰"}
 };
 /* 片假名次要例詞（一主二副的「二副」） */
 const KSUB = {
@@ -639,6 +764,8 @@ const CONFUSE = [
  ["た","だ"],["ち","ぢ"],["つ","づ"],["て","で"],["と","ど"],
  ["は","ば","ぱ"],["ひ","び","ぴ"],["ふ","ぶ","ぷ"],["へ","べ","ぺ"],["ほ","ぼ","ぽ"]
 ];
+YOON_ROWS.forEach(r=>CONFUSE.push(r));
+YOON_ROWS.flat().forEach(k=>{ KATA[k] = KATA[k[0]] + SMALLK[k[1]] });
 
 /* ================= 學習紀錄 ================= */
 const STORE_KEY = "kana50v1";
@@ -649,7 +776,14 @@ function statKey(k, script){ return script==="kata" ? KATA[k] : k }
 function getStat(key){ return stats[key] || {c:0,w:0,s:0} }
 function record(key, ok){
   const st = getStat(key);
-  if(ok){ st.c++; st.s++; } else { st.w++; st.s=0; }
+  const steps = [1,3,7,14,30];
+  if(ok){
+    st.c++; st.s++;
+    st.iv = steps[Math.min(steps.indexOf(st.iv||0)+1, steps.length-1)];
+    st.due = Date.now() + st.iv*86400000;
+  }else{
+    st.w++; st.s=0; st.iv=0; st.due = Date.now();
+  }
   stats[key] = st; saveStats();
 }
 function mastery(k, script){
@@ -687,7 +821,8 @@ function shuffle(a){
 }
 function el(id){ return document.getElementById(id) }
 function wordHTML(d, cls){
-  return d.w.split("").map((ch,i)=> i===d.wi ? `<span class="${cls}">${ch}</span>` : ch).join("");
+  const n = d.n || 1;
+  return d.w.split("").map((ch,i)=> (i>=d.wi && i<d.wi+n) ? `<span class="${cls}">${ch}</span>` : ch).join("");
 }
 
 /* ================= 分頁切換 ================= */
@@ -699,7 +834,8 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
     Object.values(tabs).forEach(v=>v.classList.add("hidden"));
     tabs[btn.dataset.tab].classList.remove("hidden");
     if(btn.dataset.tab==="progress") renderProgress();
-    if(btn.dataset.tab==="game" && !gameStarted) startGame();
+    if(btn.dataset.tab==="quiz") updateDueCount();
+    if(btn.dataset.tab==="game" && !gameStarted && gameMode!=="timed") startGame();
   });
 });
 
@@ -727,6 +863,7 @@ function renderKanaGrid(container, rows, onTap, script){
 function renderCardGrids(){
   renderKanaGrid(el("cardsGrid"), ROWS, openCard, cardScript);
   renderKanaGrid(el("cardsGridDaku"), DAKU_ROWS, openCard, cardScript);
+  renderKanaGrid(el("cardsGridYoon"), YOON_ROWS, openCard, cardScript);
 }
 el("scHira").addEventListener("click", ()=>{
   cardScript = "hira";
@@ -739,11 +876,11 @@ el("scKata").addEventListener("click", ()=>{
   renderCardGrids();
 });
 function kataSrcText(d){
-  return d.src.includes("＋") ? KATA[d.src[0]] + d.src.slice(1) : KCARD[d.k].src;
+  return d.src.includes("＋") ? toKata(d.src) : KCARD[d.k].src;
 }
 function kataTipText(d){
   return d.src.includes("＋")
-    ? KATA[d.src[0]] + d.src.slice(1) + "＝" + KATA[d.k] + "。"
+    ? toKata(d.src) + "＝" + KATA[d.k] + "。"
     : KCARD[d.k].tip;
 }
 let cardIdx = 0, overlayScript = "hira";
@@ -783,6 +920,7 @@ function openCard(i, script){
   }
   el("cardPos").textContent = (i+1) + " / " + DATA.length;
   el("cardOverlay").classList.remove("hidden");
+  if(!el("tracePanel").classList.contains("hidden")) traceGuide();
   speak(d.k);
 }
 el("cardClose").addEventListener("click", ()=>{
@@ -797,6 +935,43 @@ el("cWordBlock").addEventListener("click", ()=>{
   const d = DATA[cardIdx];
   speak(overlayScript==="kata" ? KCARD[d.k].w : d.w);
 });
+/* 手寫描紅 */
+const traceCv = el("traceCv"), traceCtx = traceCv.getContext("2d");
+function traceGuide(){
+  traceCtx.clearRect(0, 0, traceCv.width, traceCv.height);
+  const ch = overlayScript==="kata" ? KATA[DATA[cardIdx].k] : DATA[cardIdx].k;
+  traceCtx.fillStyle = "rgba(140,140,155,.28)";
+  traceCtx.font = (ch.length>1 ? "150px" : "230px") + ' "Noto Serif JP","Yu Mincho",serif';
+  traceCtx.textAlign = "center"; traceCtx.textBaseline = "middle";
+  traceCtx.fillText(ch, traceCv.width/2, traceCv.height/2 + 10);
+}
+el("traceBtn").addEventListener("click", ()=>{
+  el("tracePanel").classList.toggle("hidden");
+  if(!el("tracePanel").classList.contains("hidden")) traceGuide();
+});
+el("traceClose").addEventListener("click", ()=>el("tracePanel").classList.add("hidden"));
+el("traceClear").addEventListener("click", traceGuide);
+let tracing = false;
+function tracePos(e){
+  const r = traceCv.getBoundingClientRect();
+  return {x:(e.clientX-r.left)*traceCv.width/r.width, y:(e.clientY-r.top)*traceCv.height/r.height};
+}
+traceCv.addEventListener("pointerdown", (e)=>{
+  tracing = true;
+  const p = tracePos(e);
+  traceCtx.beginPath(); traceCtx.moveTo(p.x, p.y);
+  e.preventDefault();
+});
+traceCv.addEventListener("pointermove", (e)=>{
+  if(!tracing) return;
+  const p = tracePos(e);
+  traceCtx.lineTo(p.x, p.y);
+  traceCtx.strokeStyle = "#D5495B";
+  traceCtx.lineWidth = 11; traceCtx.lineCap = "round"; traceCtx.lineJoin = "round";
+  traceCtx.stroke();
+  e.preventDefault();
+});
+window.addEventListener("pointerup", ()=>{ tracing = false; });
 renderCardGrids();
 
 /* ================= 測驗範圍 ================= */
@@ -815,7 +990,10 @@ const RANGE_ROWS = [
  {n:"ざ行",ks:["ざ","じ","ず","ぜ","ぞ"]},
  {n:"だ行",ks:["だ","ぢ","づ","で","ど"]},
  {n:"ば行",ks:["ば","び","ぶ","べ","ぼ"]},
- {n:"ぱ行",ks:["ぱ","ぴ","ぷ","ぺ","ぽ"]}
+ {n:"ぱ行",ks:["ぱ","ぴ","ぷ","ぺ","ぽ"]},
+ {n:"拗音①",ks:["きゃ","きゅ","きょ","しゃ","しゅ","しょ","ちゃ","ちゅ","ちょ","にゃ","にゅ","にょ"]},
+ {n:"拗音②",ks:["ひゃ","ひゅ","ひょ","みゃ","みゅ","みょ","りゃ","りゅ","りょ"]},
+ {n:"拗音③",ks:["ぎゃ","ぎゅ","ぎょ","じゃ","じゅ","じょ","びゃ","びゅ","びょ","ぴゃ","ぴゅ","ぴょ"]}
 ];
 const SEION = ROWS.flat().filter(Boolean);
 let rangeSel = [];
@@ -870,9 +1048,10 @@ function setQuizScript(s){
   el("qsHira").classList.toggle("on", s==="hira");
   el("qsKata").classList.toggle("on", s==="kata");
 }
-el("qsHira").addEventListener("click", ()=>setQuizScript("hira"));
-el("qsKata").addEventListener("click", ()=>setQuizScript("kata"));
+el("qsHira").addEventListener("click", ()=>{ setQuizScript("hira"); updateDueCount(); });
+el("qsKata").addEventListener("click", ()=>{ setQuizScript("kata"); updateDueCount(); });
 setQuizScript(quizScript);
+updateDueCount();
 
 /* ================= 測驗 ================= */
 const QUIZ_LEN = 10;
@@ -918,9 +1097,56 @@ function distractors(k, n, exclude){
 document.querySelectorAll(".mode-btn").forEach(b=>{
   b.addEventListener("click", ()=>startQuiz(b.dataset.mode));
 });
+function dueList(){
+  const now = Date.now();
+  return DATA.map(d=>d.k).filter(k=>{
+    const st = getStat(statKey(k, quizScript));
+    return (st.c+st.w)>0 && (st.due||0) <= now;
+  });
+}
+function updateDueCount(){
+  el("dueDesc").textContent = "依間隔重複排程複習（目前到期 " + dueList().length + " 個音）";
+}
+function vocabPool(){
+  const out = [];
+  rangeKanas().forEach(k=>{
+    const d = DATA[IDX[k]];
+    if(quizScript==="kata"){
+      const kc = KCARD[k];
+      out.push({k, w:kc.w, m:kc.m, e:kc.e});
+      (KSUB[k]||[]).forEach(s=>out.push({k, w:s.w, m:s.m, e:s.e}));
+    }else{
+      out.push({k, w:d.w, m:d.m, e:d.e});
+      d.sub.forEach(s=>{ if(s.e) out.push({k, w:s.w, m:s.m, e:s.e}) });
+    }
+  });
+  return out;
+}
 function startQuiz(mode){
-  const targets = pickTargets(mode, QUIZ_LEN);
-  quiz = {mode, targets, i:0, score:0, wrong:[], answered:false};
+  let targets, groups = null, vocab = null;
+  if(mode==="due"){
+    const pool = dueList();
+    if(!pool.length){ alert("目前沒有到期的音，太棒了！先用其他模式累積紀錄吧。"); return; }
+    targets = shuffle(pool.slice());
+    while(targets.length < QUIZ_LEN && pool.length) targets.push(pool[Math.floor(Math.random()*pool.length)]);
+    targets = targets.slice(0, QUIZ_LEN);
+  }else if(mode==="confuse"){
+    const gs = quizScript==="kata" ? HARDG_K : HARDG_H;
+    targets = []; groups = [];
+    for(let i=0;i<QUIZ_LEN;i++){
+      const g = gs[Math.floor(Math.random()*gs.length)];
+      groups.push(g);
+      targets.push(g[Math.floor(Math.random()*g.length)]);
+    }
+  }else if(mode==="vocab"){
+    const pool = vocabPool();
+    if(pool.length < 4){ alert("這個範圍的單字太少，請先擴大測驗範圍。"); return; }
+    vocab = shuffle(pool.slice()).slice(0, QUIZ_LEN);
+    targets = vocab.map(v=>v.k);
+  }else{
+    targets = pickTargets(mode, QUIZ_LEN);
+  }
+  quiz = {mode, targets, groups, vocab, i:0, score:0, wrong:[], answered:false};
   el("quizMenu").classList.add("hidden");
   el("quizResult").classList.add("hidden");
   el("quizArea").classList.remove("hidden");
@@ -930,9 +1156,11 @@ function showQuestion(){
   const k = quiz.targets[quiz.i];
   const d = DATA[IDX[k]];
   quiz.answered = false;
-  const qtype = quiz.mode==="weak" ? ["read","listen","word","kata"][Math.floor(Math.random()*4)] : quiz.mode;
+  const qtype = (quiz.mode==="weak" || quiz.mode==="due")
+    ? ["read","listen","word","kata"][Math.floor(Math.random()*4)]
+    : quiz.mode;
   quiz.qtype = qtype;
-  el("quizProgress").textContent = (quiz.i+1) + " / " + QUIZ_LEN;
+  el("quizProgress").textContent = (quiz.i+1) + " / " + quiz.targets.length;
   el("qFeedback").textContent = ""; el("qFeedback").className = "feedback";
   el("qReview").classList.add("hidden");
   el("qNext").classList.add("hidden");
@@ -955,13 +1183,48 @@ function showQuestion(){
       qc.innerHTML = `<div class="q-label">「${d.k}」的片假名是？</div><div class="q-kana kana-font">${d.k}</div>`;
       labelFor = x=>KATA[x];
     }
+  }else if(qtype==="confuse"){
+    qc.innerHTML = `<div class="q-label">哪一個唸「${d.r}」？</div><button class="play-big" id="qPlay">🔊 播放</button>`;
+    setTimeout(()=>speak(d.k), 250);
+    qc.querySelector("#qPlay").addEventListener("click", ()=>speak(d.k));
+  }else if(qtype==="vocab"){
+    const v = quiz.vocab[quiz.i];
+    qc.innerHTML = `<div class="q-label">聽單字，選出正確的圖</div><button class="play-big" id="qPlay">🔊 播放</button>`;
+    setTimeout(()=>speak(v.w), 250);
+    qc.querySelector("#qPlay").addEventListener("click", ()=>speak(v.w));
   }else{
     const wd = kataQ ? KCARD[d.k] : d;
-    const blanked = wd.w.split("").map((ch,i)=> i===wd.wi ? '<span class="blank">◯</span>' : ch).join("");
+    const bn = wd.n || 1;
+    const blanked = wd.w.split("").map((ch,i)=> i===wd.wi ? '<span class="blank">◯</span>' : (i>wd.wi && i<wd.wi+bn ? '' : ch)).join("");
     qc.innerHTML = `<div class="q-label">◯ 是哪個假名？</div><div class="q-emoji">${wd.e}</div><div class="q-word kana-font">${blanked}</div><div class="q-mean">${wd.m}</div>`;
   }
-  const exclude = qtype==="listen" ? (HOMO[k] || []) : [];
-  const opts = shuffle([k, ...distractors(k, 3, exclude)]);
+  if(qtype==="vocab"){
+    const v = quiz.vocab[quiz.i];
+    const seenE = new Set([v.e]);
+    const ds = [];
+    shuffle(vocabPool()).forEach(x=>{
+      if(ds.length<3 && x.w!==v.w && !seenE.has(x.e)){ seenE.add(x.e); ds.push(x); }
+    });
+    shuffle([v, ...ds]).forEach(o=>{
+      const btn = document.createElement("button");
+      btn.className = "ans-btn";
+      btn.style.fontSize = "40px";
+      btn.textContent = o.e;
+      btn.dataset.w = o.w;
+      btn.addEventListener("click", ()=>vocabAnswer(btn, o.w===v.w, v, ag));
+      ag.appendChild(btn);
+    });
+    return;
+  }
+  let opts;
+  if(qtype==="confuse"){
+    const g = quiz.groups[quiz.i].filter(x=>x!==k);
+    const fill = g.length<3 ? distractors(k, 3-g.length, g) : [];
+    opts = shuffle([k, ...g.slice(0,3), ...fill]);
+  }else{
+    const exclude = qtype==="listen" ? (HOMO[k] || []) : [];
+    opts = shuffle([k, ...distractors(k, 3, exclude)]);
+  }
   opts.forEach(ok=>{
     const btn = document.createElement("button");
     btn.className = "ans-btn" + (isRomaji ? " romaji-ans" : " kana-font");
@@ -989,18 +1252,43 @@ function answer(btn, ok, k, grid){
     fb.textContent = `答錯了，正確是「${kataQ ? KATA[d.k] : d.k}」（${d.r}）`;
     fb.classList.add("no");
   }
-  const kc = KCARD[k];
-  const wd = kataQ ? {w:kc.w, wi:kc.wi, m:kc.m, e:kc.e} : d;
-  const tipI = kataQ ? kataTipText(d) : d.tipI;
   const rev = el("qReview");
-  rev.innerHTML =
-    `<div class="mc-head"><span class="mc-kana kana-font">${kataQ ? KATA[d.k] : d.k}</span><span class="mc-r">${d.r}・${kataQ ? d.k : KATA[d.k]}</span>` +
+  rev.innerHTML = miniCardHTML(k);
+  rev.classList.remove("hidden");
+  const kc = KCARD[k];
+  speak(d.k + "、" + (kataQ ? kc.w : d.w));
+  el("qNext").textContent = quiz.i+1 >= quiz.targets.length ? "看成績" : "下一題";
+  el("qNext").classList.remove("hidden");
+}
+function miniCardHTML(k){
+  const kataQ = quizScript==="kata";
+  const d = DATA[IDX[k]];
+  const kc = KCARD[k];
+  const wd = kataQ ? {w:kc.w, wi:kc.wi, n:kc.n, m:kc.m, e:kc.e} : d;
+  const tipI = kataQ ? kataTipText(d) : d.tipI;
+  return `<div class="mc-head"><span class="mc-kana kana-font">${kataQ ? KATA[d.k] : d.k}</span><span class="mc-r">${d.r}・${kataQ ? d.k : KATA[d.k]}</span>` +
     `<span class="mc-word kana-font">${wordHTML(wd,"hl")} ${wd.e}<span class="mc-mean">${wd.m}</span></span></div>` +
     `<div class="mc-tips"><b>諧音</b>　${d.tipS}<br><b>圖像</b>　${tipI}</div>` +
     `<div class="mc-open">點一下打開完整字卡 →</div>`;
+}
+function vocabAnswer(btn, ok, v, grid){
+  if(quiz.answered) return;
+  quiz.answered = true;
+  record(statKey(v.k, quizScript), ok);
+  grid.querySelectorAll(".ans-btn").forEach(b=>{
+    if(b.dataset.w===v.w) b.classList.add("correct");
+    else if(b===btn) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  const fb = el("qFeedback");
+  fb.textContent = (ok ? "答對了！" : "答錯了。") + "　" + v.w + "（" + v.m + "）";
+  fb.classList.add(ok ? "ok" : "no");
+  if(ok) quiz.score++; else quiz.wrong.push(v.k);
+  const rev = el("qReview");
+  rev.innerHTML = miniCardHTML(v.k);
   rev.classList.remove("hidden");
-  speak(d.k + "、" + wd.w);
-  el("qNext").textContent = quiz.i+1 >= QUIZ_LEN ? "看成績" : "下一題";
+  speak(v.w);
+  el("qNext").textContent = quiz.i+1 >= quiz.targets.length ? "看成績" : "下一題";
   el("qNext").classList.remove("hidden");
 }
 el("qReview").addEventListener("click", ()=>{
@@ -1008,16 +1296,18 @@ el("qReview").addEventListener("click", ()=>{
 });
 el("qNext").addEventListener("click", ()=>{
   quiz.i++;
-  if(quiz.i >= QUIZ_LEN) showResult(); else showQuestion();
+  if(quiz.i >= quiz.targets.length) showResult(); else showQuestion();
 });
 el("quizQuit").addEventListener("click", ()=>{
   el("quizArea").classList.add("hidden");
   el("quizMenu").classList.remove("hidden");
+  updateDueCount();
 });
 function showResult(){
   el("quizArea").classList.add("hidden");
   el("quizResult").classList.remove("hidden");
-  el("resScore").textContent = quiz.score + " / " + QUIZ_LEN;
+  updateDueCount();
+  el("resScore").textContent = quiz.score + " / " + quiz.targets.length;
   const uniq = [...new Set(quiz.wrong)];
   el("resWrongWrap").style.display = uniq.length ? "" : "none";
   el("resWrong").textContent = uniq.map(x=> quizScript==="kata" ? KATA[x] : x).join(" ");
@@ -1030,16 +1320,80 @@ el("resBack").addEventListener("click", ()=>{
 
 /* ================= 配對翻牌 ================= */
 let gameStarted = false, gOpen = [], gMoves = 0, gMatched = 0, gLock = false, gameMode = "sound";
-el("gmSound").addEventListener("click", ()=>{
-  gameMode = "sound";
-  el("gmSound").classList.add("on"); el("gmKata").classList.remove("on");
-  startGame();
+function setGameMode(m){
+  gameMode = m;
+  el("gmSound").classList.toggle("on", m==="sound");
+  el("gmKata").classList.toggle("on", m==="kata");
+  el("gmTimed").classList.toggle("on", m==="timed");
+  el("matchWrap").classList.toggle("hidden", m==="timed");
+  el("timedPanel").classList.toggle("hidden", m!=="timed");
+  if(m==="timed") tdReset(); else startGame();
+}
+el("gmSound").addEventListener("click", ()=>setGameMode("sound"));
+el("gmKata").addEventListener("click", ()=>setGameMode("kata"));
+el("gmTimed").addEventListener("click", ()=>setGameMode("timed"));
+/* 限時挑戰 */
+let tdTimer = null, tdScore = 0, tdLeft = 60, tdCur = null, tdLock = false, tdBest = 0;
+try{ tdBest = parseInt(localStorage.getItem("kana50best")||"0",10) || 0 }catch(e){}
+function tdReset(){
+  clearInterval(tdTimer); tdTimer = null;
+  el("tdKana").textContent = "";
+  el("tdAns").innerHTML = "";
+  el("tdDone").classList.add("hidden");
+  el("tdStart").textContent = "開始挑戰";
+  el("tdStart").classList.remove("hidden");
+  el("tdInfo").textContent = "60 秒內答對越多題越好！" + (tdBest ? "（最佳紀錄 " + tdBest + " 題）" : "");
+}
+function tdInfoUpd(){ el("tdInfo").textContent = "剩 " + tdLeft + " 秒｜已答對 " + tdScore + " 題"; }
+el("tdStart").addEventListener("click", ()=>{
+  tdScore = 0; tdLeft = 60;
+  el("tdStart").classList.add("hidden");
+  el("tdDone").classList.add("hidden");
+  tdTimer = setInterval(()=>{
+    tdLeft--;
+    if(tdLeft <= 0) tdEnd(); else tdInfoUpd();
+  }, 1000);
+  tdNext(); tdInfoUpd();
 });
-el("gmKata").addEventListener("click", ()=>{
-  gameMode = "kata";
-  el("gmKata").classList.add("on"); el("gmSound").classList.remove("on");
-  startGame();
-});
+function tdNext(){
+  tdLock = false;
+  const pool = rangeKanas();
+  const k = pool[Math.floor(Math.random()*pool.length)];
+  const script = Math.random() < 0.5 ? "hira" : "kata";
+  tdCur = {k, script};
+  el("tdKana").textContent = script==="kata" ? KATA[k] : k;
+  const ag = el("tdAns"); ag.innerHTML = "";
+  shuffle([k, ...distractors(k, 3, [])]).forEach(ok=>{
+    const btn = document.createElement("button");
+    btn.className = "ans-btn romaji-ans";
+    btn.textContent = DATA[IDX[ok]].r;
+    btn.addEventListener("click", ()=>{
+      if(tdLock || !tdTimer) return;
+      tdLock = true;
+      const right = ok === tdCur.k;
+      record(statKey(tdCur.k, tdCur.script), right);
+      btn.classList.add(right ? "correct" : "wrong");
+      if(right) tdScore++;
+      tdInfoUpd();
+      setTimeout(tdNext, right ? 200 : 650);
+    });
+    ag.appendChild(btn);
+  });
+}
+function tdEnd(){
+  clearInterval(tdTimer); tdTimer = null;
+  el("tdAns").innerHTML = ""; el("tdKana").textContent = "";
+  if(tdScore > tdBest){
+    tdBest = tdScore;
+    try{ localStorage.setItem("kana50best", String(tdBest)) }catch(e){}
+  }
+  el("tdInfo").textContent = "時間到！";
+  const done = el("tdDone");
+  done.textContent = "🎉 答對 " + tdScore + " 題（最佳紀錄 " + tdBest + " 題）";
+  done.classList.remove("hidden");
+  el("tdStart").textContent = "再挑戰一次";
+  el("tdStart").classList.remove("hidden");
+}
 function startGame(){
   gameStarted = true; gOpen = []; gMoves = 0; gMatched = 0; gLock = false;
   el("gameMoves").textContent = "翻牌 0 次";
@@ -1119,12 +1473,36 @@ function renderProgress(){
   el("stNew").textContent = counts.new;
   renderKanaGrid(el("progGrid"), ROWS, openCard, progScript);
   renderKanaGrid(el("progGridDaku"), DAKU_ROWS, openCard, progScript);
+  renderKanaGrid(el("progGridYoon"), YOON_ROWS, openCard, progScript);
 }
 el("resetBtn").addEventListener("click", ()=>{
   if(confirm("確定要清除所有學習紀錄嗎？")){
     stats = {}; saveStats(); renderProgress();
   }
 });
+el("expBtn").addEventListener("click", ()=>{
+  const txt = JSON.stringify({v:1, stats});
+  const fallback = ()=>prompt("複製下面這段文字保存：", txt);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(
+      ()=>alert("已複製到剪貼簿！貼到記事本或傳給自己保存，換手機時用「匯入紀錄」還原。"),
+      fallback);
+  }else fallback();
+});
+el("impBtn").addEventListener("click", ()=>{
+  const txt = prompt("貼上先前匯出的紀錄：");
+  if(!txt) return;
+  try{
+    const obj = JSON.parse(txt);
+    if(!obj || typeof obj.stats !== "object") throw 0;
+    stats = obj.stats; saveStats(); renderProgress();
+    alert("匯入成功！");
+  }catch(e){ alert("格式不正確，匯入失敗。"); }
+});
+/* PWA service worker */
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
 </script>
 </body>
 </html>

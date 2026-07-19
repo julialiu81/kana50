@@ -1,0 +1,12 @@
+{
+  "name": "50音字卡",
+  "short_name": "50音",
+  "description": "平假名・片假名學習字卡：發音、口訣、測驗、間隔複習",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F6F3EC",
+  "theme_color": "#D5495B",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
